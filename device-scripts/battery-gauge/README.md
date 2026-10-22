@@ -7,10 +7,10 @@
 `/cache/battery-gauge/`（cache 分区，恢复出厂不清除）
 
 ```
-gauge.sh              电量采样脚本（oneshot，由 systemd timer 每 5s 触发一次）
+gauge.sh              电量采样脚本（oneshot，由 systemd timer 每 10s 触发一次）
 respond.sh            HTTP 响应器（systemd socket-activation，按需启动，空闲零常驻进程）
 install.sh            一键启动电量采集与 HTTP 服务（重启后需重新执行）
-index.html            电量状态主页（白底响应式，每秒自动读取 state.json）
+index.html            电量状态主页（白底响应式，每 10 秒自动读取 state.json）
 checkpoint            掉电持久化检查点（每 60s 落盘一次 soc+ts）
 soc / ts              兜底历史状态（无 checkpoint 时的初始化种子）
 ```
@@ -20,7 +20,7 @@ soc / ts              兜底历史状态（无 checkpoint 时的初始化种子�
 ## 访问页面与接口
 
 ```text
-http://<设备IP>:88             电量状态主页（每秒自动刷新）
+http://<设备IP>:88             电量状态主页（每 10 秒自动刷新）
 http://<设备IP>:88/state.json  原始 JSON 接口
 ```
 
@@ -54,7 +54,7 @@ sh /cache/battery-gauge/install.sh
 
 ## 算法说明
 
-- **库仑积分**：每 5s 读取 `current_now`，`ΔSOC = I×Δt / 9800mAh`（标称容量，可按实测老化调整 `gauge.sh` 中 `CAP_MAH`）
+- **库仑积分**：每 10s 读取 `current_now`，`ΔSOC = I×Δt / 9800mAh`（标称容量，可按实测老化调整 `gauge.sh` 中 `CAP_MAH`）
 - **满充锚点**：充电中且电压 ≥4.35V、电流 <300mA（或 status=Full）→ 校准 100%
 - **空电锚点**：放电且电压 ≤3.45V → 校准 1.5%
 - **OCV 初始化**：无历史状态时按 4.45V 高压锂电 OCV-SOC 曲线估算（充电态减去内阻压降，按 25mΩ 估算）

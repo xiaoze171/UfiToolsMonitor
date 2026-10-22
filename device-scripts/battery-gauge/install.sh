@@ -1,5 +1,5 @@
 #!/bin/sh
-# 启动低占用软件电量计：5 秒定时采样 + 88 端口按需 HTTP。
+# 启动低占用软件电量计：10 秒定时采样 + 88 端口按需 HTTP。
 # 所有 systemd 单元只写入 /run，设备重启后消失，不修改只读 rootfs。
 
 BASE=/cache/battery-gauge
@@ -36,11 +36,11 @@ EOF
 
 cat > "$UNIT_DIR/battery-gauge-sample.timer" <<'EOF'
 [Unit]
-Description=Sample MU5120 battery every 5 seconds
+Description=Sample MU5120 battery every 10 seconds
 
 [Timer]
 OnActiveSec=1s
-OnUnitActiveSec=5s
+OnUnitActiveSec=10s
 AccuracySec=1s
 Unit=battery-gauge-sample.service
 

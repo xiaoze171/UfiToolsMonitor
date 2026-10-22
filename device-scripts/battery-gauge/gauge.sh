@@ -1,5 +1,5 @@
 #!/bin/sh
-# MU5120 软件电量计：由 systemd timer 每 5 秒执行一次。
+# MU5120 软件电量计：由 systemd timer 每 10 秒执行一次。
 
 BASE=/cache/battery-gauge
 RUN=/run/battery-gauge
@@ -109,7 +109,7 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"capacity_mah_nominal\": %d,\n", cap;
     printf "  \"kernel_locked_percent\": 50,\n";
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
-    printf "  \"interval_s\": 5,\n";
+    printf "  \"interval_s\": 10,\n";
     printf "  \"ts\": %d\n", now;
     printf "}\n";
 }' > "$RUN/.state.tmp" && mv "$RUN/.state.tmp" "$STATE"
