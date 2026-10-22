@@ -1,23 +1,53 @@
 #!/bin/sh
-# battery-gauge HTTP 响应器（systemd socket-activation 每连接拉起一次）
-# 读取实时 sysfs + gauge 循环维护的 SOC，返回 JSON
-STATE=/cache/battery-gauge/state.json
-BAT=/sys/class/power_supply/battery
+# systemd socket-activation HTTP 响应器；每个请求短暂启动，空闲零常驻进程。
 
-# 丢弃 HTTP 请求头（最多等 2 秒，避免恶意连接挂住）
-read -t 2 _request 2>/dev/null
+BASE=/cache/battery-gauge
+STATE=/run/battery-gauge/state.json
 
-v=$(cat $BAT/voltage_now 2>/dev/null || echo 0)
-i=$(cat $BAT/current_now 2>/dev/null || echo 0)
-t=$(cat $BAT/temp 2>/dev/null || echo 0)
-st=$(cat $BAT/status 2>/dev/null || echo Unknown)
-extra=$(cat "$STATE" 2>/dev/null || echo '"error":"gauge state missing"')
+IFS=' ' read -r method target protocol || exit 0
+while IFS= read -r header; do
+    [ -z "$header" ] && break
+    [ "$header" = "$(printf '\r')" ] && break
+done
 
-printf 'HTTP/1.1 200 OK\r\n'
-printf 'Content-Type: application/json; charset=utf-8\r\n'
-printf 'Cache-Control: no-store\r\n'
-printf 'Connection: close\r\n'
-printf 'Access-Control-Allow-Origin: *\r\n'
-printf '\r\n'
-printf '{"voltage_mv":%d,"current_ma":%d,"temp_c_deci":%s,"status":"%s","now":%s,%s}\n' \
-  $((v/1000)) $((i/1000)) "$t" "$st" "$(date +%s)" "$extra"
+path=${target%%\?*}
+
+send_file() {
+    file=$1
+    content_type=$2
+    if [ ! -r "$file" ]; then
+        send_text 503 application/json '{"error":"state unavailable"}'
+        return
+    fi
+    length=$(wc -c < "$file" | tr -d ' ')
+    printf 'HTTP/1.1 200 OK\r\n'
+    printf 'Content-Type: %s\r\n' "$content_type"
+    printf 'Content-Length: %s\r\n' "$length"
+    printf 'Cache-Control: no-store\r\n'
+    printf 'Connection: close\r\n\r\n'
+    [ "$method" = "HEAD" ] || cat "$file"
+}
+
+send_text() {
+    code=$1
+    content_type=$2
+    body=$3
+    printf 'HTTP/1.1 %s\r\n' "$code"
+    printf 'Content-Type: %s; charset=utf-8\r\n' "$content_type"
+    printf 'Content-Length: %s\r\n' "${#body}"
+    printf 'Cache-Control: no-store\r\n'
+    printf 'Connection: close\r\n\r\n'
+    [ "$method" = "HEAD" ] || printf '%s' "$body"
+}
+
+case "$method" in
+    GET|HEAD) ;;
+    *) send_text '405 Method Not Allowed' text/plain 'Method not allowed'; exit 0 ;;
+esac
+
+case "$path" in
+    /|/index.html) send_file "$BASE/index.html" 'text/html; charset=utf-8' ;;
+    /state.json) send_file "$STATE" 'application/json; charset=utf-8' ;;
+    /favicon.ico) send_text '204 No Content' text/plain '' ;;
+    *) send_text '404 Not Found' text/plain 'Not found' ;;
+esac
