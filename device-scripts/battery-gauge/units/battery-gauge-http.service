@@ -1,0 +1,7 @@
+[Unit]
+Description=battery-gauge HTTP responder (per-connection)
+Requires=battery-gauge.socket
+
+[Service]
+ExecStart=/bin/sh /cache/battery-gauge/respond.sh
+StandardInput=socket
