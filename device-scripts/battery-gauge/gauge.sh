@@ -137,19 +137,20 @@ else
 fi
 
 # === 供电模式判定（供页面展示） ===
-# 注意：充满后充电器"终止充电"仍会持续浮充维持，不能等同于厂商的直供电。
+# customer_mode=2（CUSTOMER_SINGLE_LONG_CHARGING_MODE）即厂商的直供电/长充电模式：
+# 写入后充电器不再对电池充电，整机由适配器带载。
+#   直供电   ：插电 + customer_mode=2（或充电被显式关闭）
 #   充电中   ：插电 + status=Charging + 电流≥50mA
-#   直供电   ：插电 + 充电被显式关闭（status=Not Charging 或 restrict_chg=1）
-#   浮充维持 ：插电 + status=Full，充电器仍在微流维持（并非直供）
+#   浮充维持 ：插电 + status=Full，充电器仍在微流维持（尚未切模式 2）
 #   电池供电 ：未插电
 restrict_chg=$(cat /sys/class/qcom-battery/restrict_chg 2>/dev/null)
 case "$restrict_chg" in ''|*[!0-9]*) restrict_chg=0 ;; esac
 
 if [ "$online" = 1 ]; then
-    if [ "$st" = "Charging" ] && [ "$ma" -ge 50 ]; then
-        power_mode=charging; power_mode_cn="充电中"
-    elif [ "$st" = "Not Charging" ] || [ "$restrict_chg" = 1 ]; then
+    if [ "$customer_mode" = 2 ] || [ "$st" = "Not Charging" ] || [ "$restrict_chg" = 1 ]; then
         power_mode=direct;   power_mode_cn="直供电"
+    elif [ "$st" = "Charging" ] && [ "$ma" -ge 50 ]; then
+        power_mode=charging; power_mode_cn="充电中"
     else
         power_mode=float;    power_mode_cn="浮充维持"
     fi
@@ -212,6 +213,7 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"kernel_locked_percent\": 50,\n";
     printf "  \"power_mode\": \"%s\",\n", pmode;
     printf "  \"power_mode_cn\": \"%s\",\n", pcn;
+    printf "  \"direct_supply\": %s,\n", ((pmode == "direct") ? "true" : "false");
     printf "  \"plugged_min\": %d,\n", pmin;
     printf "  \"long_charge\": {\"threshold_min\": %d, \"state\": %d, \"customer_mode\": %d},\n", lmin, lstate, cmode;
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";

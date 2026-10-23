@@ -119,11 +119,12 @@ adb shell sh /cache/battery-gauge/install.sh
 |---|---|---|
 | `power_mode` / `power_mode_cn` | `charging` 充电中 | 插电 + status=Charging + 电流 ≥50mA |
 | | `float` 浮充维持 | 插电 + status=Full，充电器仍在微流维持（**不是**直供电） |
-| | `direct` 直供电 | 插电 + 充电被显式关闭（status=Not Charging 或 restrict_chg=1） |
+| | `direct` 直供电 | 插电 + `customer_mode=2`（长充电/直供模式），或充电被显式关闭 |
 | | `battery` 电池供电 | 未插电 |
 | `plugged_min` | 分钟数 | 本次插电已持续时长（未插电为 0） |
 
-> 注意：充满后充电器终止充电仍会持续浮充维持（典型值 4~7mA），不能等同于厂商的直供电。
-> 当前固件没有真正跑"直供"状态机，需要显式停充（如 `qcom-battery/restrict_chg`）才会出现 `direct`。
+> `customer_mode=2` 即厂商的直供电模式（CUSTOMER_SINGLE_LONG_CHARGING_MODE），写 2 后
+> `direct_supply` 字段为 `true`、页面显示「直供电」。充满后充电器在终止与浮充之间循环时
+> 若尚未切到模式 2，则显示「浮充维持」（典型值 4~7mA 微流），二者不要混淆。
 
 页面右上角徽标仍显示充电状态（充电中/已充满/放电中），底部的「供电状态」卡片显示上面这个模式。
