@@ -1,6 +1,6 @@
 #!/bin/sh
 # MU5120 软件电量计：由 systemd timer 每 1 秒执行一次
-# 每 5 秒把真实 SOC 回写内核 /sys/class/power_supply/battery/capacity（QG 已失效，不会被覆盖）
+# 仅计算并输出真实 SOC（不写内核节点：屏幕走 ZTE 自研估算层，写了也看不到）
 
 BASE=/cache/battery-gauge
 RUN=/run/battery-gauge
@@ -82,26 +82,6 @@ if [ "$st" = "Discharging" ] && [ "$mv" -le 3450 ]; then
     soc=1.5000
 fi
 
-# === 内核电量同步（每 5 秒把真实 SOC 回写 /sys/class/power_supply/battery/capacity） ===
-# QG 因电池档案匹配失败算不出 SOC，不会覆盖这里写入的值；写入即持久生效。
-# 若要临时停用：touch /cache/battery-gauge/no-cap-sync
-CAP_SYNC_SEC=5
-CAP_SYNCF=$RUN/last-cap-sync
-kernel_cap=$(cat "$BAT/capacity" 2>/dev/null)
-case "$kernel_cap" in ''|*[!0-9]*) kernel_cap=-1 ;; esac
-if [ ! -e "$BASE/no-cap-sync" ]; then
-    cap_ts=0
-    [ -r "$CAP_SYNCF" ] && cap_ts=$(cat "$CAP_SYNCF" 2>/dev/null)
-    case "$cap_ts" in ''|*[!0-9]*) cap_ts=0 ;; esac
-    if [ $((now - cap_ts)) -ge "$CAP_SYNC_SEC" ] || [ $((now - cap_ts)) -lt 0 ]; then
-        cap_out=$(awk -v s="$soc" 'BEGIN { v = int(s + 0.5); if (v < 0) v = 0; if (v > 100) v = 100; printf "%d", v }')
-        printf '%s\n' "$cap_out" > "$BAT/capacity" 2>/dev/null
-        kernel_cap=$(cat "$BAT/capacity" 2>/dev/null)
-        case "$kernel_cap" in ''|*[!0-9]*) kernel_cap=-1 ;; esac
-        printf '%s\n' "$now" > "$CAP_SYNCF" 2>/dev/null
-    fi
-fi
-
 printf '%s\n' "$soc" > "$RUN/.soc.tmp" && mv "$RUN/.soc.tmp" "$RUN/soc"
 printf '%s\n' "$now" > "$RUN/.ts.tmp" && mv "$RUN/.ts.tmp" "$RUN/ts"
 
@@ -139,7 +119,7 @@ if [ "$need" = 1 ]; then
     cp "$LOG" /run/backup/battery-log.csv 2>/dev/null
 fi
 
-awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" -v kcap="$kernel_cap" 'BEGIN {
+awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" 'BEGIN {
     st_cn = (st=="Charging") ? "充电中" : (st=="Discharging") ? "放电中" : (st=="Full") ? "已充满" : (st=="Not Charging") ? "未充电" : "未知";
     power = mv * ma / 1000000.0;
     printf "{\n";
@@ -153,8 +133,6 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"summary\": \"电量约%.2f%%，%s，当前功率约%.4fW\",\n", soc, st_cn, power;
     printf "  \"capacity_mah_nominal\": %d,\n", cap;
     printf "  \"kernel_locked_percent\": 50,\n";
-    printf "  \"kernel_capacity\": %d,\n", kcap;
-    printf "  \"kernel_capacity_sync_s\": 5,\n";
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
     printf "  \"interval_s\": 1,\n";
     printf "  \"ts\": %d\n", now;

@@ -73,34 +73,19 @@ CSV 列：`ts_iso,ts,soc,voltage_mv,current_ma,power_w,temp_c,status`
 1. 积分得到电池实测 FCC（满充容量）
 2. 逐 1% 提取 OCV-SOC 曲线 → 生成设备树 `qcom,fcc1-temp-lut` / `qcom,pc-temp-*` 表数据
 
-## 内核电量同步（每 5 秒）
-
-QG 因电池档案匹配失败（`batt_id` 读数为 0，不匹配 20kΩ/47kΩ 任一档案）而算不出 SOC，
-其上报的 `capacity` 常年锁死 50。但该节点在 root 下**可写且写入持久**（QG 不会覆盖）。
-
-gauge.sh 因此每 5 秒把软件电量计的 SOC 四舍五入后回写：
-
-```
-/sys/class/power_supply/battery/capacity   ← 真实 SOC（0~100 整数）
-```
-
-- 节流状态记在 `/run/battery-gauge/last-cap-sync`，采样仍是 1 秒一次
-- 读回值写入 state.json 的 `kernel_capacity` 字段，`kernel_capacity_sync_s` 为同步周期
-- 临时停用：`touch /cache/battery-gauge/no-cap-sync`（删除该文件即恢复）
-
-注意：设备屏幕与 datad 上报走的是 ZTE 自研估算层（`battery_zte/capacity_mbb`），
-不受本同步影响——该层数值用户态改不动，只能等固件修复。
-
 ## 一键启动（重启后执行）
 
 `/run` 是 tmpfs，重启后 systemd 单元会丢失。设备开机后执行一次：
 
 ```bash
-adb shell sh /cache/battery-gauge/start-88.sh
+adb shell sh /cache/battery-gauge/install.sh
 ```
 
-该脚本会重建四个单元（采样 service/timer、88 端口 socket/service）、启动它们，
-并打印 timer/socket 状态、内核电量与完整的 state.json。
+该脚本会重建四个单元（采样 service/timer、88 端口 socket/service）并启动，
+打印 timer/socket 状态与完整的 state.json。`start-88.sh` 是等价的别名脚本。
 
-> 旧命令 `sh /cache/battery-gauge/install.sh` 仍可用：该文件现为兼容入口，
-> 会直接转发到 `start-88.sh`（原版把它写死 10 秒采样，已废弃）。
+采样周期为 1 秒（`OnUnitActiveSec=1s`、`AccuracySec=100ms`），开销可忽略。
+
+> 说明：本服务**不写任何内核节点**。设备屏幕与 datad 上报走 ZTE 自研估算层
+> （`battery_zte/capacity_mbb`），该层数值在用户态改不动，写内核 `capacity`
+> 对屏幕显示无效，因此已移除相关逻辑。
