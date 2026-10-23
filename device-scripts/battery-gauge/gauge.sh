@@ -1,5 +1,5 @@
 #!/bin/sh
-# MU5120 软件电量计：由 systemd timer 每 10 秒执行一次。
+# MU5120 软件电量计：由 systemd timer 每 1 秒执行一次。
 
 BASE=/cache/battery-gauge
 RUN=/run/battery-gauge
@@ -101,15 +101,15 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"soc\": %.2f,\n", soc;
     printf "  \"voltage_mv\": %d,\n", mv;
     printf "  \"current_ma\": %d,\n", ma;
-    printf "  \"power_w\": %.1f,\n", power;
+    printf "  \"power_w\": %.4f,\n", power;
     printf "  \"temp_c\": %.1f,\n", t / 10.0;
     printf "  \"status\": \"%s\",\n", st;
     printf "  \"status_cn\": \"%s\",\n", st_cn;
-    printf "  \"summary\": \"电量约%.0f%%，%s，当前功率约%.1fW\",\n", soc, st_cn, power;
+    printf "  \"summary\": \"电量约%.2f%%，%s，当前功率约%.4fW\",\n", soc, st_cn, power;
     printf "  \"capacity_mah_nominal\": %d,\n", cap;
     printf "  \"kernel_locked_percent\": 50,\n";
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
-    printf "  \"interval_s\": 10,\n";
+    printf "  \"interval_s\": 1,\n";
     printf "  \"ts\": %d\n", now;
     printf "}\n";
 }' > "$RUN/.state.tmp" && mv "$RUN/.state.tmp" "$STATE"
