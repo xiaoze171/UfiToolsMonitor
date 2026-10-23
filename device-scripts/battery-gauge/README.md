@@ -101,3 +101,6 @@ adb shell sh /cache/battery-gauge/start-88.sh
 
 该脚本会重建四个单元（采样 service/timer、88 端口 socket/service）、启动它们，
 并打印 timer/socket 状态、内核电量与完整的 state.json。
+
+> 旧命令 `sh /cache/battery-gauge/install.sh` 仍可用：该文件现为兼容入口，
+> 会直接转发到 `start-88.sh`（原版把它写死 10 秒采样，已废弃）。
