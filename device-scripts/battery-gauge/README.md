@@ -89,3 +89,24 @@ adb shell sh /cache/battery-gauge/install.sh
 > 说明：本服务**不写任何内核节点**。设备屏幕与 datad 上报走 ZTE 自研估算层
 > （`battery_zte/capacity_mbb`），该层数值在用户态改不动，写内核 `capacity`
 > 对屏幕显示无效，因此已移除相关逻辑。
+
+## 插电满 30 分钟自动切长充电模式
+
+原厂的长充电/直供逻辑挂在 `battery_zte/customer_mode`：
+`1=CUSTOMER_DEFAULT_MODE`、`2=CUSTOMER_SINGLE_LONG_CHARGING_MODE`，
+模式 2 的周期参数 `single_lcm_period` 固定 960 分钟（驱动常量，无配置入口）。
+
+为不等这 16 小时，gauge.sh 自行计时并在插电满阈值后切到模式 2：
+
+- 插电判定：`/sys/class/power_supply/usb/online == 1`，计时起点存 `/run/battery-gauge/plug-start`
+- 拔电立即清除计时（本次会话结束），下次插入重新计
+- 达到阈值写 `battery_zte/customer_mode = 2`，每次插电只写一次
+- 阈值：`/cache/battery-gauge/lcm.conf`（纯数字，单位分钟，默认 30）
+- 停用：`touch /cache/battery-gauge/no-lcm`
+- 生效记录：`/cache/battery-gauge/lcm.log`（时间 + plugged_min + 切换后 mode）
+- 实时状态：`state.json` 的 `plugged_min` 与 `long_charge{threshold_min,state,customer_mode}`
+  （state：0=未插电 / 1=计时中 / 2=已切换）
+
+注意：驱动对 `customer_mode` 只允许升级（2 无法降回 1），重启后回到默认 1；
+模式 2 是否真的让设备提前进入直供尚未观测到，若需强制停充应另用
+`/sys/class/qcom-battery/restrict_chg`（待电池低于 95% 时验证）。

@@ -1,5 +1,6 @@
 #!/bin/sh
 # MU5120 软件电量计：由 systemd timer 每 1 秒执行一次
+# 插电满 lcm.conf 设定的分钟数（默认 30）后自动切换 customer_mode=2（单次长充电模式）
 # 仅计算并输出真实 SOC（不写内核节点：屏幕走 ZTE 自研估算层，写了也看不到）
 
 BASE=/cache/battery-gauge
@@ -7,6 +8,7 @@ RUN=/run/battery-gauge
 CHECKPOINT=$BASE/checkpoint
 STATE=$RUN/state.json
 BAT=/sys/class/power_supply/battery
+BAT_ZTE=/sys/class/power_supply/battery_zte
 CAP_MAH=9800
 R_MOHM=25
 CHECKPOINT_SEC=60
@@ -82,6 +84,58 @@ if [ "$st" = "Discharging" ] && [ "$mv" -le 3450 ]; then
     soc=1.5000
 fi
 
+# === 插电满 N 分钟后切到 customer_mode=2（CUSTOMER_SINGLE_LONG_CHARGING_MODE） ===
+# 目的：不等原厂 16 小时（960 分钟）的长充电周期，自己提前进入长充电/直供策略。
+# 阈值来自 /cache/battery-gauge/lcm.conf（纯数字，单位分钟，默认 30）。
+# 临时停用：touch /cache/battery-gauge/no-lcm
+# 说明：驱动只允许 customer_mode 升级（2 不可降回 1），重启后恢复默认。
+lcm_min=30
+if [ -r "$BASE/lcm.conf" ]; then
+    v=$(cat "$BASE/lcm.conf" 2>/dev/null | tr -dc '0-9')
+    [ -n "$v" ] && lcm_min=$v
+fi
+
+online=$(cat /sys/class/power_supply/usb/online 2>/dev/null)
+case "$online" in 1) ;; *) online=0 ;; esac
+
+PLUGF=$RUN/plug-start
+LCMF=$RUN/lcm-applied
+plug_min=0
+lcm_state=0          # 0=未插电 1=计时中 2=已切换
+customer_mode=$(cat "$BAT_ZTE/customer_mode" 2>/dev/null)
+case "$customer_mode" in ''|*[!0-9]*) customer_mode=-1 ;; esac
+
+if [ "$online" = 1 ]; then
+    plug_start=$(cat "$PLUGF" 2>/dev/null)
+    case "$plug_start" in
+        ''|*[!0-9]*) plug_start=$now; printf '%s\n' "$now" > "$PLUGF" 2>/dev/null ;;
+    esac
+    plugged=$((now - plug_start))
+    [ "$plugged" -lt 0 ] && plugged=0
+    plug_min=$((plugged / 60))
+
+    if [ -e "$LCMF" ]; then
+        lcm_state=2
+    elif [ -e "$BASE/no-lcm" ]; then
+        lcm_state=1
+    elif [ "$plugged" -ge $((lcm_min * 60)) ]; then
+        printf '2\n' > "$BAT_ZTE/customer_mode" 2>/dev/null
+        customer_mode=$(cat "$BAT_ZTE/customer_mode" 2>/dev/null)
+        case "$customer_mode" in ''|*[!0-9]*) customer_mode=-1 ;; esac
+        printf '%s switch_to_lcm plugged_min=%s mode=%s\n' \
+            "$(date '+%Y-%m-%d %H:%M:%S')" "$plug_min" "$customer_mode" >> "$BASE/lcm.log" 2>/dev/null
+        printf '%s\n' "$now" > "$LCMF" 2>/dev/null
+        lcm_state=2
+    else
+        lcm_state=1
+    fi
+else
+    # 拔电：本次插电会话结束，重置计时（customer_mode 本身不会自动降级）
+    rm -f "$PLUGF" "$LCMF" 2>/dev/null
+    lcm_state=0
+    plug_min=0
+fi
+
 printf '%s\n' "$soc" > "$RUN/.soc.tmp" && mv "$RUN/.soc.tmp" "$RUN/soc"
 printf '%s\n' "$now" > "$RUN/.ts.tmp" && mv "$RUN/.ts.tmp" "$RUN/ts"
 
@@ -119,7 +173,8 @@ if [ "$need" = 1 ]; then
     cp "$LOG" /run/backup/battery-log.csv 2>/dev/null
 fi
 
-awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" 'BEGIN {
+awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" \
+    -v lmin="$lcm_min" -v lstate="$lcm_state" -v pmin="$plug_min" -v cmode="$customer_mode" 'BEGIN {
     st_cn = (st=="Charging") ? "充电中" : (st=="Discharging") ? "放电中" : (st=="Full") ? "已充满" : (st=="Not Charging") ? "未充电" : "未知";
     power = mv * ma / 1000000.0;
     printf "{\n";
@@ -133,6 +188,8 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"summary\": \"电量约%.2f%%，%s，当前功率约%.4fW\",\n", soc, st_cn, power;
     printf "  \"capacity_mah_nominal\": %d,\n", cap;
     printf "  \"kernel_locked_percent\": 50,\n";
+    printf "  \"plugged_min\": %d,\n", pmin;
+    printf "  \"long_charge\": {\"threshold_min\": %d, \"state\": %d, \"customer_mode\": %d},\n", lmin, lstate, cmode;
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
     printf "  \"interval_s\": 1,\n";
     printf "  \"ts\": %d\n", now;
