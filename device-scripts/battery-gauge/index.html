@@ -22,11 +22,13 @@
 <div class="metric"><div class="label">电流</div><div class="value"><b id="current">--</b><small>mA</small></div></div>
 <div class="metric"><div class="label">功率</div><div class="value"><b id="power">--</b><small>W</small></div></div>
 <div class="metric"><div class="label">温度</div><div class="value"><b id="temp">--</b><small>℃</small></div></div>
+<div class="metric"><div class="label">供电状态</div><div class="value"><b id="pmode">--</b></div></div>
+<div class="metric"><div class="label">已插电</div><div class="value"><b id="plug">--</b><small>分钟</small></div></div>
 </div></section>
 <footer><span id="error">连接中断，正在重试</span></footer>
 </main>
 <script>
-const app=document.getElementById('app'),battery=document.getElementById('battery'),live=document.getElementById('live'),ids=['soc','status','voltage','current','power','temp'],el=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)])),fmt=(v,d=0)=>Number.isFinite(Number(v))?Number(v).toFixed(d):'--';async function refresh(){try{const r=await fetch(`state.json?t=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw 0;const x=await r.json(),s=Math.max(0,Math.min(100,Number(x.soc)||0));el.soc.textContent=fmt(s,2);el.status.textContent=x.status_cn||x.status||'未知';el.voltage.textContent=fmt(Number(x.voltage_mv)/1000,3);el.current.textContent=fmt(x.current_ma);el.power.textContent=fmt(x.power_w,4);el.temp.textContent=fmt(x.temp_c,1);app.style.setProperty('--p',`${s}%`);battery.setAttribute('aria-label',`软件估算电量 ${fmt(s,2)}%`);live.textContent='实时';app.classList.remove('offline')}catch(e){live.textContent='离线';app.classList.add('offline')}}refresh();setInterval(refresh,1000);
+const app=document.getElementById('app'),battery=document.getElementById('battery'),live=document.getElementById('live'),ids=['soc','status','voltage','current','power','temp','pmode','plug'],el=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)])),fmt=(v,d=0)=>Number.isFinite(Number(v))?Number(v).toFixed(d):'--';async function refresh(){try{const r=await fetch(`state.json?t=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw 0;const x=await r.json(),s=Math.max(0,Math.min(100,Number(x.soc)||0));el.soc.textContent=fmt(s,2);el.status.textContent=x.status_cn||x.status||'未知';el.voltage.textContent=fmt(Number(x.voltage_mv)/1000,3);el.current.textContent=fmt(x.current_ma);el.power.textContent=fmt(x.power_w,4);el.temp.textContent=fmt(x.temp_c,1);el.pmode.textContent=x.power_mode_cn||'--';el.plug.textContent=fmt(x.plugged_min);app.style.setProperty('--p',`${s}%`);battery.setAttribute('aria-label',`软件估算电量 ${fmt(s,2)}%`);live.textContent='实时';app.classList.remove('offline')}catch(e){live.textContent='离线';app.classList.add('offline')}}refresh();setInterval(refresh,1000);
 </script>
 </body>
 </html>

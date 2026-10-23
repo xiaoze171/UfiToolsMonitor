@@ -110,3 +110,16 @@ adb shell sh /cache/battery-gauge/install.sh
 注意：驱动对 `customer_mode` 只允许升级（2 无法降回 1），重启后回到默认 1；
 模式 2 是否真的让设备提前进入直供尚未观测到，若需强制停充应另用
 `/sys/class/qcom-battery/restrict_chg`（待电池低于 95% 时验证）。
+
+## 页面展示供电状态
+
+页面新增两张卡片（`state.json` 同步给出字段）：
+
+| 字段 | 取值 | 判定 |
+|---|---|---|
+| `power_mode` / `power_mode_cn` | `charging` 充电中 | 插电且 status=Charging、电流 ≥50mA |
+| | `direct` 直供电 | 插电但电池既不充也不放（已充满/充电终止，电流≈0），整机由适配器带载 |
+| | `battery` 电池供电 | 未插电 |
+| `plugged_min` | 分钟数 | 本次插电已持续时长（未插电为 0） |
+
+页面右上角徽标仍显示充电状态（充电中/已充满/放电中），底部的「供电状态」卡片显示上面这个模式。

@@ -136,6 +136,18 @@ else
     plug_min=0
 fi
 
+# === 供电模式判定（供页面展示） ===
+# 直供电：插着电但电池既不充也不放（已充满或充电终止，电流接近 0），整机由适配器带载
+if [ "$online" = 1 ]; then
+    if [ "$st" = "Charging" ] && [ "$ma" -ge 50 ]; then
+        power_mode=charging; power_mode_cn="充电中"
+    else
+        power_mode=direct;   power_mode_cn="直供电"
+    fi
+else
+    power_mode=battery;      power_mode_cn="电池供电"
+fi
+
 printf '%s\n' "$soc" > "$RUN/.soc.tmp" && mv "$RUN/.soc.tmp" "$RUN/soc"
 printf '%s\n' "$now" > "$RUN/.ts.tmp" && mv "$RUN/.ts.tmp" "$RUN/ts"
 
@@ -174,7 +186,8 @@ if [ "$need" = 1 ]; then
 fi
 
 awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" \
-    -v lmin="$lcm_min" -v lstate="$lcm_state" -v pmin="$plug_min" -v cmode="$customer_mode" 'BEGIN {
+    -v lmin="$lcm_min" -v lstate="$lcm_state" -v pmin="$plug_min" -v cmode="$customer_mode" \
+    -v pmode="$power_mode" -v pcn="$power_mode_cn" 'BEGIN {
     st_cn = (st=="Charging") ? "充电中" : (st=="Discharging") ? "放电中" : (st=="Full") ? "已充满" : (st=="Not Charging") ? "未充电" : "未知";
     power = mv * ma / 1000000.0;
     printf "{\n";
@@ -188,6 +201,8 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"summary\": \"电量约%.2f%%，%s，当前功率约%.4fW\",\n", soc, st_cn, power;
     printf "  \"capacity_mah_nominal\": %d,\n", cap;
     printf "  \"kernel_locked_percent\": 50,\n";
+    printf "  \"power_mode\": \"%s\",\n", pmode;
+    printf "  \"power_mode_cn\": \"%s\",\n", pcn;
     printf "  \"plugged_min\": %d,\n", pmin;
     printf "  \"long_charge\": {\"threshold_min\": %d, \"state\": %d, \"customer_mode\": %d},\n", lmin, lstate, cmode;
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
