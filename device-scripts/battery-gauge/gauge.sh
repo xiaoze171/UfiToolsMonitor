@@ -137,12 +137,21 @@ else
 fi
 
 # === 供电模式判定（供页面展示） ===
-# 直供电：插着电但电池既不充也不放（已充满或充电终止，电流接近 0），整机由适配器带载
+# 注意：充满后充电器"终止充电"仍会持续浮充维持，不能等同于厂商的直供电。
+#   充电中   ：插电 + status=Charging + 电流≥50mA
+#   直供电   ：插电 + 充电被显式关闭（status=Not Charging 或 restrict_chg=1）
+#   浮充维持 ：插电 + status=Full，充电器仍在微流维持（并非直供）
+#   电池供电 ：未插电
+restrict_chg=$(cat /sys/class/qcom-battery/restrict_chg 2>/dev/null)
+case "$restrict_chg" in ''|*[!0-9]*) restrict_chg=0 ;; esac
+
 if [ "$online" = 1 ]; then
     if [ "$st" = "Charging" ] && [ "$ma" -ge 50 ]; then
         power_mode=charging; power_mode_cn="充电中"
-    else
+    elif [ "$st" = "Not Charging" ] || [ "$restrict_chg" = 1 ]; then
         power_mode=direct;   power_mode_cn="直供电"
+    else
+        power_mode=float;    power_mode_cn="浮充维持"
     fi
 else
     power_mode=battery;      power_mode_cn="电池供电"
