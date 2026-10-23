@@ -1,17 +1,13 @@
 #!/bin/sh
 # systemd socket-activation HTTP 响应器；每个请求短暂启动，空闲零常驻进程。
-
 BASE=/cache/battery-gauge
 STATE=/run/battery-gauge/state.json
-
 IFS=' ' read -r method target protocol || exit 0
 while IFS= read -r header; do
     [ -z "$header" ] && break
     [ "$header" = "$(printf '\r')" ] && break
 done
-
 path=${target%%\?*}
-
 send_file() {
     file=$1
     content_type=$2
@@ -27,7 +23,6 @@ send_file() {
     printf 'Connection: close\r\n\r\n'
     [ "$method" = "HEAD" ] || cat "$file"
 }
-
 send_text() {
     code=$1
     content_type=$2
@@ -39,15 +34,18 @@ send_text() {
     printf 'Connection: close\r\n\r\n'
     [ "$method" = "HEAD" ] || printf '%s' "$body"
 }
-
 case "$method" in
     GET|HEAD) ;;
     *) send_text '405 Method Not Allowed' text/plain 'Method not allowed'; exit 0 ;;
 esac
-
 case "$path" in
     /|/index.html) send_file "$BASE/index.html" 'text/html; charset=utf-8' ;;
     /state.json) send_file "$STATE" 'application/json; charset=utf-8' ;;
+    /backup/*)
+        n=${path#/backup/}
+        case "$n" in *[!/A-Za-z0-9._-]*) send_text "403 Forbidden" text/plain "forbidden"; exit 0 ;; esac
+        send_file "/run/backup/$n" "application/octet-stream"
+        ;;
     /favicon.ico) send_text '204 No Content' text/plain '' ;;
     *) send_text '404 Not Found' text/plain 'Not found' ;;
 esac

@@ -59,3 +59,16 @@ sh /cache/battery-gauge/install.sh
 - **空电锚点**：放电且电压 ≤3.45V → 校准 1.5%
 - **OCV 初始化**：无历史状态时按 4.45V 高压锂电 OCV-SOC 曲线估算（充电态减去内阻压降，按 25mΩ 估算）
 - 状态持久化于 `/cache/battery-gauge/checkpoint`（每 60s 落盘 soc+时间戳），重启不丢；实时状态在 `/run/battery-gauge/`（tmpfs）
+
+## 生命周期数据记录
+
+gauge.sh 每次执行时判断是否需要落一条记录（SOC 每变化 1% / 60 秒心跳 / 充放电状态变化），追加写入：
+
+- 设备持久化：`/cache/battery-log/cycle.csv`
+- HTTP 实时访问：`http://<设备IP>:88/backup/battery-log.csv`（由 respond.sh 的 /backup 路由提供）
+
+CSV 列：`ts_iso,ts,soc,voltage_mv,current_ma,power_w,temp_c,status`
+
+一次完整充放电周期约 1500~3000 行（<300KB）。用途：
+1. 积分得到电池实测 FCC（满充容量）
+2. 逐 1% 提取 OCV-SOC 曲线 → 生成设备树 `qcom,fcc1-temp-lut` / `qcom,pc-temp-*` 表数据

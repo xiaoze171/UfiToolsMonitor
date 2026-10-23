@@ -5,3 +5,4 @@ build/
 local.properties
 *.apk
 *.sh text eol=lf
+备份/

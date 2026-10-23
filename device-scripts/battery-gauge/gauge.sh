@@ -1,5 +1,5 @@
 #!/bin/sh
-# MU5120 软件电量计：由 systemd timer 每 1 秒执行一次。
+# MU5120 软件电量计：由 systemd timer 每 10 秒执行一次。
 
 BASE=/cache/battery-gauge
 RUN=/run/battery-gauge
@@ -92,6 +92,30 @@ case "$checkpoint_ts" in ''|*[!0-9]*) checkpoint_ts=0 ;; esac
 if [ $((now - checkpoint_ts)) -ge "$CHECKPOINT_SEC" ] || [ $((now - checkpoint_ts)) -lt 0 ]; then
     printf '%s %s\n' "$soc" "$now" > "$BASE/.checkpoint.tmp" &&
         mv "$BASE/.checkpoint.tmp" "$CHECKPOINT"
+fi
+
+# === 电池生命周期数据记录（SOC 每变化 1% / 60 秒心跳 / 状态变化时写一条） ===
+LOG_DIR=/cache/battery-log
+LOG=$LOG_DIR/cycle.csv
+LASTF=$RUN/last-rec
+mkdir -p "$LOG_DIR" /run/backup 2>/dev/null
+[ -s "$LOG" ] || echo "ts_iso,ts,soc,voltage_mv,current_ma,power_w,temp_c,status" > "$LOG"
+last_soc=; last_ts=; last_st=
+if [ -r "$LASTF" ]; then read last_soc last_ts last_st < "$LASTF"; fi
+need=0
+case "$last_ts" in ''|*[!0-9]*) need=1;; esac
+if [ "$need" = 0 ]; then
+    dd1=$(awk -v a="$soc" -v b="${last_soc:-0}" 'BEGIN{d=a-b; if(d<0)d=-d; printf "%d", (d>=1)?1:0}')
+    [ "$dd1" = 1 ] && need=1
+    [ $((now - last_ts)) -ge 60 ] && need=1
+    [ "$st" != "$last_st" ] && need=1
+fi
+if [ "$need" = 1 ]; then
+    awk -v ts="$(date '+%Y-%m-%d %H:%M:%S')" -v now="$now" -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" 'BEGIN{
+        printf "%s,%s,%s,%s,%s,%.4f,%.1f,%s\n", ts, now, soc, mv, ma, mv*ma/1000000, t/10, st
+    }' >> "$LOG"
+    printf '%s %s %s\n' "$soc" "$now" "$st" > "$LASTF"
+    cp "$LOG" /run/backup/battery-log.csv 2>/dev/null
 fi
 
 awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" 'BEGIN {
