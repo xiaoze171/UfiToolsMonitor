@@ -90,34 +90,6 @@ adb shell sh /cache/battery-gauge/install.sh
 > （`battery_zte/capacity_mbb`），该层数值在用户态改不动，写内核 `capacity`
 > 对屏幕显示无效，因此已移除相关逻辑。
 
-## 插电满 30 分钟自动切长充电模式
-
-原厂的长充电/直供逻辑挂在 `battery_zte/customer_mode`：
-`1=CUSTOMER_DEFAULT_MODE`、`2=CUSTOMER_SINGLE_LONG_CHARGING_MODE`，
-模式 2 的周期参数 `single_lcm_period` 固定 960 分钟（驱动常量，无配置入口）。
-
-为不等这 16 小时，gauge.sh 自行计时并在插电满阈值后切到模式 2：
-
-- 插电判定：`/sys/class/power_supply/usb/online == 1`，计时起点存 `/run/battery-gauge/plug-start`
-- 拔电立即清除计时（本次会话结束），下次插入重新计
-- 达到阈值写 `battery_zte/customer_mode = 2`，每次插电只写一次
-- 阈值：`/cache/battery-gauge/lcm.conf`（纯数字，单位分钟，默认 30）
-- 停用：`touch /cache/battery-gauge/no-lcm`
-- 生效记录：`/cache/battery-gauge/lcm.log`（时间 + plugged_min + 切换后 mode）
-- 实时状态：`state.json` 的 `plugged_min` 与 `long_charge{threshold_min,state,customer_mode}`
-  （state：0=未插电 / 1=计时中 / 2=已切换）
-
-注意：驱动对 `customer_mode` 只允许升级（2 无法降回 1），重启后回到默认 1。
-
-实测（2026-10-24，42% 充电态）：
-- 写 mode 2 后 `status` 仍为 Charging、电池电流仍是 2006 mA → **不停充**
-- `restrict_chg=1` 只把充电电流从 2050 mA 降到 1037 mA（限流 50%，非停充）
-- `constant_charge_current_max` / `charge_control_limit` 写入无效或只读
-- 结论：用户态目前**没有可用的"停充"原语**，直供无法在软件层复现
-
-因此自动切换默认已停用（`/cache/battery-gauge/no-lcm` 存在），仅保留代码与快速验证开关：
-`touch /cache/battery-gauge/direct.test` + `echo 1 > lcm.conf` 可改为「插电满 1 分钟触发」用于实验。
-
 ## 页面展示供电状态
 
 页面新增两张卡片（`state.json` 同步给出字段）：
@@ -135,3 +107,7 @@ adb shell sh /cache/battery-gauge/install.sh
 > 原厂 960 分钟触发的直供可能走的是驱动内部另一条路径，用户态无法复现。
 
 页面右上角徽标仍显示充电状态（充电中/已充满/放电中），底部的「供电状态」卡片显示上面这个模式。
+`direct_supply` 为布尔字段（= `power_mode=="direct"`），供程序判断。
+
+> 注：曾尝试写 `customer_mode=2` 实现提前直供，实测无效（不停止充电）且该模式只能升不能降，
+> 相关自动切换逻辑已于 2026-10-24 移除，脚本恢复为纯只读监测。

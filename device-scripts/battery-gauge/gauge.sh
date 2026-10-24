@@ -1,6 +1,5 @@
 #!/bin/sh
 # MU5120 软件电量计：由 systemd timer 每 1 秒执行一次
-# 插电满 lcm.conf 设定的分钟数（默认 30）后自动切换 customer_mode=2（单次长充电模式）
 # 仅计算并输出真实 SOC（不写内核节点：屏幕走 ZTE 自研估算层，写了也看不到）
 
 BASE=/cache/battery-gauge
@@ -84,84 +83,23 @@ if [ "$st" = "Discharging" ] && [ "$mv" -le 3450 ]; then
     soc=1.5000
 fi
 
-# === 满电持续 N 分钟后进入直供电（customer_mode=2） ===
-# 原厂逻辑：连续充电满 960 分钟（single_lcm_period，驱动常量）后由驱动自动停充转直供；
-# 本脚本改为「插着电 + 满电保持 N 分钟」即主动切入同一模式，不等 16 小时。
-# 阈值：/cache/battery-gauge/lcm.conf（纯数字，分钟，默认 30）
-# 停用：touch /cache/battery-gauge/no-lcm
-# 注意：customer_mode 只能升不能降（驱动优先级 2>1），重启后复位为 1
-lcm_min=30
-if [ -r "$BASE/lcm.conf" ]; then
-    v=$(cat "$BASE/lcm.conf" 2>/dev/null | tr -dc '0-9')
-    [ -n "$v" ] && lcm_min=$v
-fi
-
+# === 插电时长统计（仅展示，不写任何内核节点） ===
 online=$(cat /sys/class/power_supply/usb/online 2>/dev/null)
 case "$online" in 1) ;; *) online=0 ;; esac
 
 PLUGF=$RUN/plug-start
-FULLF=$RUN/full-start
-LCMF=$RUN/lcm-applied
 plug_min=0
-full_min=0
-lcm_state=0          # 0=未插电 1=计时中 2=已进入直供
-customer_mode=$(cat "$BAT_ZTE/customer_mode" 2>/dev/null)
-case "$customer_mode" in ''|*[!0-9]*) customer_mode=-1 ;; esac
-
-# 满电判定：status=Full 或 SOC ≥ 99.5%
-is_full=0
-[ "$st" = "Full" ] && is_full=1
-[ "$(awk -v s="$soc" 'BEGIN { printf "%d", (s >= 99.5) ? 1 : 0 }')" = 1 ] && is_full=1
 
 if [ "$online" = 1 ]; then
-    # 插电时长
     ps=$(cat "$PLUGF" 2>/dev/null)
     case "$ps" in
         ''|*[!0-9]*) ps=$now; printf '%s\n' "$now" > "$PLUGF" 2>/dev/null ;;
     esac
     pl=$((now - ps)); [ "$pl" -lt 0 ] && pl=0
     plug_min=$((pl / 60))
-
-    # 满电持续时长
-    if [ "$is_full" = 1 ]; then
-        fs=$(cat "$FULLF" 2>/dev/null)
-        case "$fs" in
-            ''|*[!0-9]*) fs=$now; printf '%s\n' "$now" > "$FULLF" 2>/dev/null ;;
-        esac
-        fm=$((now - fs)); [ "$fm" -lt 0 ] && fm=0
-        full_min=$((fm / 60))
-    else
-        rm -f "$FULLF" 2>/dev/null
-        full_min=0
-    fi
-
-    # 触发条件：满电保持 N 分钟；若存在 direct.test 则改为「插电满 N 分钟」用于快速验证
-    trigger=0
-    if [ "$is_full" = 1 ] && [ "$full_min" -ge "$lcm_min" ]; then trigger=1; fi
-    if [ -e "$BASE/direct.test" ] && [ "$plug_min" -ge "$lcm_min" ]; then trigger=1; fi
-
-    if [ -e "$LCMF" ] || [ "$customer_mode" = 2 ]; then
-        lcm_state=2
-    elif [ -e "$BASE/no-lcm" ]; then
-        lcm_state=1
-    elif [ "$trigger" = 1 ]; then
-        printf '2\n' > "$BAT_ZTE/customer_mode" 2>/dev/null
-        customer_mode=$(cat "$BAT_ZTE/customer_mode" 2>/dev/null)
-        case "$customer_mode" in ''|*[!0-9]*) customer_mode=-1 ;; esac
-        printf '%s enter_direct_supply full_min=%s plugged_min=%s trigger=%s mode=%s\n' \
-            "$(date '+%Y-%m-%d %H:%M:%S')" "$full_min" "$plug_min" "$trigger" "$customer_mode" \
-            >> "$BASE/lcm.log" 2>/dev/null
-        printf '%s\n' "$now" > "$LCMF" 2>/dev/null
-        lcm_state=2
-    else
-        lcm_state=1
-    fi
 else
-    # 拔电：会话结束，计时与标记一起清空（customer_mode 本身不会自动降级）
-    rm -f "$PLUGF" "$FULLF" "$LCMF" 2>/dev/null
-    lcm_state=0
+    rm -f "$PLUGF" 2>/dev/null
     plug_min=0
-    full_min=0
 fi
 
 # === 供电模式判定（供页面展示） ===
@@ -221,8 +159,7 @@ if [ "$need" = 1 ]; then
 fi
 
 awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" \
-    -v lmin="$lcm_min" -v lstate="$lcm_state" -v pmin="$plug_min" -v fmin="$full_min" \
-    -v cmode="$customer_mode" \
+    -v pmin="$plug_min" \
     -v pmode="$power_mode" -v pcn="$power_mode_cn" 'BEGIN {
     st_cn = (st=="Charging") ? "充电中" : (st=="Discharging") ? "放电中" : (st=="Full") ? "已充满" : (st=="Not Charging") ? "未充电" : "未知";
     power = mv * ma / 1000000.0;
@@ -241,7 +178,6 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"power_mode_cn\": \"%s\",\n", pcn;
     printf "  \"direct_supply\": %s,\n", ((pmode == "direct") ? "true" : "false");
     printf "  \"plugged_min\": %d,\n", pmin;
-    printf "  \"long_charge\": {\"threshold_min\": %d, \"full_min\": %d, \"state\": %d, \"customer_mode\": %d},\n", lmin, fmin, lstate, cmode;
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
     printf "  \"interval_s\": 1,\n";
     printf "  \"ts\": %d\n", now;
