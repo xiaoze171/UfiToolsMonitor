@@ -84,11 +84,12 @@ if [ "$st" = "Discharging" ] && [ "$mv" -le 3450 ]; then
     soc=1.5000
 fi
 
-# === 插电满 N 分钟后切到 customer_mode=2（CUSTOMER_SINGLE_LONG_CHARGING_MODE） ===
-# 目的：不等原厂 16 小时（960 分钟）的长充电周期，自己提前进入长充电/直供策略。
-# 阈值来自 /cache/battery-gauge/lcm.conf（纯数字，单位分钟，默认 30）。
-# 临时停用：touch /cache/battery-gauge/no-lcm
-# 说明：驱动只允许 customer_mode 升级（2 不可降回 1），重启后恢复默认。
+# === 满电持续 N 分钟后进入直供电（customer_mode=2） ===
+# 原厂逻辑：连续充电满 960 分钟（single_lcm_period，驱动常量）后由驱动自动停充转直供；
+# 本脚本改为「插着电 + 满电保持 N 分钟」即主动切入同一模式，不等 16 小时。
+# 阈值：/cache/battery-gauge/lcm.conf（纯数字，分钟，默认 30）
+# 停用：touch /cache/battery-gauge/no-lcm
+# 注意：customer_mode 只能升不能降（驱动优先级 2>1），重启后复位为 1
 lcm_min=30
 if [ -r "$BASE/lcm.conf" ]; then
     v=$(cat "$BASE/lcm.conf" 2>/dev/null | tr -dc '0-9')
@@ -99,55 +100,79 @@ online=$(cat /sys/class/power_supply/usb/online 2>/dev/null)
 case "$online" in 1) ;; *) online=0 ;; esac
 
 PLUGF=$RUN/plug-start
+FULLF=$RUN/full-start
 LCMF=$RUN/lcm-applied
 plug_min=0
-lcm_state=0          # 0=未插电 1=计时中 2=已切换
+full_min=0
+lcm_state=0          # 0=未插电 1=计时中 2=已进入直供
 customer_mode=$(cat "$BAT_ZTE/customer_mode" 2>/dev/null)
 case "$customer_mode" in ''|*[!0-9]*) customer_mode=-1 ;; esac
 
-if [ "$online" = 1 ]; then
-    plug_start=$(cat "$PLUGF" 2>/dev/null)
-    case "$plug_start" in
-        ''|*[!0-9]*) plug_start=$now; printf '%s\n' "$now" > "$PLUGF" 2>/dev/null ;;
-    esac
-    plugged=$((now - plug_start))
-    [ "$plugged" -lt 0 ] && plugged=0
-    plug_min=$((plugged / 60))
+# 满电判定：status=Full 或 SOC ≥ 99.5%
+is_full=0
+[ "$st" = "Full" ] && is_full=1
+[ "$(awk -v s="$soc" 'BEGIN { printf "%d", (s >= 99.5) ? 1 : 0 }')" = 1 ] && is_full=1
 
-    if [ -e "$LCMF" ]; then
+if [ "$online" = 1 ]; then
+    # 插电时长
+    ps=$(cat "$PLUGF" 2>/dev/null)
+    case "$ps" in
+        ''|*[!0-9]*) ps=$now; printf '%s\n' "$now" > "$PLUGF" 2>/dev/null ;;
+    esac
+    pl=$((now - ps)); [ "$pl" -lt 0 ] && pl=0
+    plug_min=$((pl / 60))
+
+    # 满电持续时长
+    if [ "$is_full" = 1 ]; then
+        fs=$(cat "$FULLF" 2>/dev/null)
+        case "$fs" in
+            ''|*[!0-9]*) fs=$now; printf '%s\n' "$now" > "$FULLF" 2>/dev/null ;;
+        esac
+        fm=$((now - fs)); [ "$fm" -lt 0 ] && fm=0
+        full_min=$((fm / 60))
+    else
+        rm -f "$FULLF" 2>/dev/null
+        full_min=0
+    fi
+
+    # 触发条件：满电保持 N 分钟；若存在 direct.test 则改为「插电满 N 分钟」用于快速验证
+    trigger=0
+    if [ "$is_full" = 1 ] && [ "$full_min" -ge "$lcm_min" ]; then trigger=1; fi
+    if [ -e "$BASE/direct.test" ] && [ "$plug_min" -ge "$lcm_min" ]; then trigger=1; fi
+
+    if [ -e "$LCMF" ] || [ "$customer_mode" = 2 ]; then
         lcm_state=2
     elif [ -e "$BASE/no-lcm" ]; then
         lcm_state=1
-    elif [ "$plugged" -ge $((lcm_min * 60)) ]; then
+    elif [ "$trigger" = 1 ]; then
         printf '2\n' > "$BAT_ZTE/customer_mode" 2>/dev/null
         customer_mode=$(cat "$BAT_ZTE/customer_mode" 2>/dev/null)
         case "$customer_mode" in ''|*[!0-9]*) customer_mode=-1 ;; esac
-        printf '%s switch_to_lcm plugged_min=%s mode=%s\n' \
-            "$(date '+%Y-%m-%d %H:%M:%S')" "$plug_min" "$customer_mode" >> "$BASE/lcm.log" 2>/dev/null
+        printf '%s enter_direct_supply full_min=%s plugged_min=%s trigger=%s mode=%s\n' \
+            "$(date '+%Y-%m-%d %H:%M:%S')" "$full_min" "$plug_min" "$trigger" "$customer_mode" \
+            >> "$BASE/lcm.log" 2>/dev/null
         printf '%s\n' "$now" > "$LCMF" 2>/dev/null
         lcm_state=2
     else
         lcm_state=1
     fi
 else
-    # 拔电：本次插电会话结束，重置计时（customer_mode 本身不会自动降级）
-    rm -f "$PLUGF" "$LCMF" 2>/dev/null
+    # 拔电：会话结束，计时与标记一起清空（customer_mode 本身不会自动降级）
+    rm -f "$PLUGF" "$FULLF" "$LCMF" 2>/dev/null
     lcm_state=0
     plug_min=0
+    full_min=0
 fi
 
 # === 供电模式判定（供页面展示） ===
-# customer_mode=2（CUSTOMER_SINGLE_LONG_CHARGING_MODE）即厂商的直供电/长充电模式：
-# 写入后充电器不再对电池充电，整机由适配器带载。
-#   直供电   ：插电 + customer_mode=2（或充电被显式关闭）
+# 结论（2026-10-24 实测）：写 customer_mode=2 并不会停止充电（写入后仍 2A 充电），
+# 因此不能把 mode 2 当作"直供电"。判定只看真实功率流向：
+#   直供电   ：插电 + 充电被显式关闭（status=Not Charging）
 #   充电中   ：插电 + status=Charging + 电流≥50mA
-#   浮充维持 ：插电 + status=Full，充电器仍在微流维持（尚未切模式 2）
+#   浮充维持 ：插电 + status=Full（充电器微流维持）
 #   电池供电 ：未插电
-restrict_chg=$(cat /sys/class/qcom-battery/restrict_chg 2>/dev/null)
-case "$restrict_chg" in ''|*[!0-9]*) restrict_chg=0 ;; esac
-
 if [ "$online" = 1 ]; then
-    if [ "$customer_mode" = 2 ] || [ "$st" = "Not Charging" ] || [ "$restrict_chg" = 1 ]; then
+    if [ "$st" = "Not Charging" ]; then
         power_mode=direct;   power_mode_cn="直供电"
     elif [ "$st" = "Charging" ] && [ "$ma" -ge 50 ]; then
         power_mode=charging; power_mode_cn="充电中"
@@ -196,7 +221,8 @@ if [ "$need" = 1 ]; then
 fi
 
 awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH" -v now="$now" \
-    -v lmin="$lcm_min" -v lstate="$lcm_state" -v pmin="$plug_min" -v cmode="$customer_mode" \
+    -v lmin="$lcm_min" -v lstate="$lcm_state" -v pmin="$plug_min" -v fmin="$full_min" \
+    -v cmode="$customer_mode" \
     -v pmode="$power_mode" -v pcn="$power_mode_cn" 'BEGIN {
     st_cn = (st=="Charging") ? "充电中" : (st=="Discharging") ? "放电中" : (st=="Full") ? "已充满" : (st=="Not Charging") ? "未充电" : "未知";
     power = mv * ma / 1000000.0;
@@ -215,7 +241,7 @@ awk -v soc="$soc" -v mv="$mv" -v ma="$ma" -v t="$t" -v st="$st" -v cap="$CAP_MAH
     printf "  \"power_mode_cn\": \"%s\",\n", pcn;
     printf "  \"direct_supply\": %s,\n", ((pmode == "direct") ? "true" : "false");
     printf "  \"plugged_min\": %d,\n", pmin;
-    printf "  \"long_charge\": {\"threshold_min\": %d, \"state\": %d, \"customer_mode\": %d},\n", lmin, lstate, cmode;
+    printf "  \"long_charge\": {\"threshold_min\": %d, \"full_min\": %d, \"state\": %d, \"customer_mode\": %d},\n", lmin, fmin, lstate, cmode;
     printf "  \"method\": \"coulomb+ocv-anchor\",\n";
     printf "  \"interval_s\": 1,\n";
     printf "  \"ts\": %d\n", now;
