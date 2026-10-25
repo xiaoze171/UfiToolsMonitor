@@ -1,0 +1,17 @@
+bin/sh
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin
+
+echo "run clean_mem.sh"
+sleep 1
+echo "Stopping qualcomm process ..."
+
+echo "Sending all processes the TERM signal ..."
+
+echo "Sending all processes the KILL signal ..."
+
+free -m
+
+echo "clean_mem.sh complete !"
+
+

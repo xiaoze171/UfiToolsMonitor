@@ -1,0 +1,124 @@
+#!/bin/sh
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin
+echo "run preprocessing.sh"
+if [ ! -f /tmp/new_update_flg ]; then
+    touch /tmp/new_update_flg
+    zte_topsw_dua split_delta normal_dua.mld /tmp/zte_topsw_dua
+    if [ -f /tmp/zte_topsw_dua ]; then
+        chmod 755 /tmp/zte_topsw_dua 
+        killall -9 zte_topsw_dua
+        /tmp/zte_topsw_dua standalone &
+        exit
+    fi
+fi
+#if [ "$1" == "power_fail_protection" ];then
+#sleep 10
+#fi
+echo "up >> `date` `cfg get wa_inner_version` "
+#killall -9 zte_adapter_cfg
+killall -9 zte_adapter_gps
+killall -9 zte_adapter_ppp
+killall -9 zte_adapter_nwinfo
+killall -9 zte_adapter_wlan
+killall -9 zte_adapter_wms
+killall -9 zte_adapter_sim
+killall -9 zte_adapter_pbm
+killall -9 zte_adapter_usb_ctl
+#killall -9 zte_adapter_bsp
+killall -9 zte_adapter_smsdm
+killall -9 zte_topsw_cfg
+killall -9 zte_topsw_daemon
+killall -9 QCMAP_CLI
+killall -9 zte_adapter_ussd
+killall -9 zte_adapter_stk
+killall -9 zte_adapter_voice
+killall -9 zte_adapter_voicemail
+killall -9 wlan_services
+killall -9 tftp_server
+ifconfig rmnet_data0 down
+ifconfig rndis0 down
+ifconfig wlan0 down
+ifconfig wlan1 down
+rmmod zte_http_redirect
+killall -9 zte_topsw_redirect
+killall -9 zte_topsw_wispr
+killall -9 zte_topsw_dmapp_sbm
+#killall -9 zte_topsw_mmi
+killall -9 zte_topsw_diag
+killall -9 zte_topsw_wms
+killall -9 zte_topsw_lan
+killall -9 zte_topsw_pma
+killall -9 zte_topsw_mdm
+killall -9 zte_topsw_mc_startup
+killall -9 zte_topsw_mc
+killall -9 zte_wan_nwinfor
+killall -9 zte_topsw_ppp_dial
+killall -9 zte_topsw_wan_sig
+killall -9 zte_topsw_router
+killall -9 zte_topsw_goahead
+killall -9 zte_topsw_sleep
+killall -9 syslogd
+killall -9 zte_topsw_data_stat
+killall -9 zte_topsw_fota_dial
+killall -9 zte_topsw_key
+killall -9 zte_topsw_ntp
+killall -9 zte_topsw_limit
+killall -9 zte_topsw_devui
+killall -9 zte_topsw_atfwd
+killall -9 mtdev2tuio
+killall -9 touchui
+killall -9 dnsmasq
+killall -9 miniupnpd
+killall -9 ntpclient
+killall -9 zte_topsw_led
+killall -9 zte_topsw_tr069
+killall -9 zte_topsw_ussd
+killall -9 zte_topsw_stk
+killall -9 zte_topsw_wlan
+killall -9 zte_topsw_pbm
+killall -9 zte_dm
+killall -9 zte_topsw_qtui
+killall -9 zte_mini_ui
+killall -9 zte_topsw_voice
+killall -9 zte_topsw_gps
+killall -9 zte_topsw_datausage
+killall -9 zte_topsw_multi_pdns_dial
+killall -9 zte_topsw_wdcp
+killall -9 hostapd_cli
+killall -9 hostapd
+killall -9 zte_topsw_data_stat_for_mac
+killall -9 zte_topsw_sura_server
+killall -9 zte_boot_animation
+killall -9 zte_router_gps_socket
+killall -9 QCMAP_ConnectionManager
+killall -9 zte_topsw_tr069_new
+killall -9 zte_topsw_tr098db
+killall -9 zte_trx_router
+killall -9 zte_smart_wan
+killall -9 zte_topsw_at_fota
+killall -9 zte_topsw_at_sock
+killall -9 zte_topsw_uartat_server
+killall -9 port_bridge
+killall -9 zte_topsw_odu_proxy
+killall -9 zte_topsw_cbns_server
+killall -9 zte_topsw_ble
+killall -9 zte_topsw_tr069_2nd
+iptables -I INPUT -j DROP
+iptables -I FORWARD -j DROP
+cfg set updatecontrol_preprocess_start=1
+cfg save
+rm -rf /var/volatile/tmp/reg_table_*
+rm -f /etc_rw/ztembb/dm/tree_zdm.xml
+#rm -f /etc_rw/ztembb/dm/dmconfig.dat
+rm -f /usr/dm/tree.xml
+zte_topsw_dua split_delta duash.mld /cache/ztedua.sh
+chmod 755 /cache/ztedua.sh
+sync
+zte_topsw_dua split_delta recovery_dua.mld /cache/zte_topsw_duar
+chmod 755 /cache/zte_topsw_duar
+sync
+mount -t ubifs -o remount,rw,bulk_read ubi0:rootfs /
+mount -t ubifs -o remount,rw,bulk_read /dev/ubi1_0 /firmware
+mount -t ubifs -o remount,rw,bulk_read ubi0:ztedata /usr/zte_web
+echo "preprocessing complete !"

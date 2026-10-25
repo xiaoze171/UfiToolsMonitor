@@ -1,0 +1,18 @@
+#!/bin/sh
+killall -9 zte_topsw_dua
+sleep 1
+if [ "$1" == "recovery" ] ; then
+	if [ -f /cache/zte_topsw_duar ];then
+		chmod  755 /cache/zte_topsw_duar
+		/cache/zte_topsw_duar standalone&
+	else
+		zte_topsw_dua standalone&
+	fi
+else 
+	if [ -f /cache/zte_topsw_dua ];then
+		chmod  755 /cache/zte_topsw_dua
+		/cache/zte_topsw_dua standalone&
+	else
+		zte_topsw_dua standalone&
+	fi
+fi 

@@ -5,7 +5,4 @@ build/
 local.properties
 *.apk
 *.sh text eol=lf
-备份/
-work/*.bin
-work/*.dtb
-work/
+备份/rootfs-files.tar.gz

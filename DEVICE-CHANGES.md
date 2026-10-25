@@ -107,3 +107,10 @@ adb shell sh /cache/battery-gauge/install.sh
 | `README.md` | 部署与维护说明 |
 
 设备端位置：`/cache/battery-gauge/`（含 Alpine busybox 运行时，约 1.7MB，不入库）。
+
+## 五、2026-10-25 状态更新（详见 HANDOFF-MU5120修复路线.md）
+
+- 88 端口已实现开机自启（zwrt-datad 包装脚本方案），重启 45 秒内自动上线
+- gauge.sh SOC 断崖 bug 已修复（地板钳制改 IR 补偿 OCV 判断，R_MOHM=45）
+- OTA/boot 补丁刷写卡点、继续修复路线、禁区清单 → 全部交接至 `HANDOFF-MU5120修复路线.md`
+- 全量 mtd 备份与 OTA 逆向产物已入库（`备份/`、`OTA包/`、`work/`；rootfs-files.tar.gz 超 GitHub 100MB 限制已分卷 part-00/01）

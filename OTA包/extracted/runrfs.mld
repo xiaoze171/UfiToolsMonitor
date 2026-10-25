@@ -1,0 +1,8 @@
+#!/bin/sh
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin
+mount -t ubifs ubi3:systemrw /mnt/systemrw -o bulk_read
+sleep 1
+rm -rf /mnt/systemrw/*
+ls -laR /mnt/systemrw/
+sync

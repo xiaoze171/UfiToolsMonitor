@@ -1,0 +1,27 @@
+#!/bin/sh
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin
+crt_pwd=`pwd`
+echo "run postprocessing.sh"
+rm -rf /cache/update.bin
+rm -rf /cache/*.signature
+rm -rf /cache/public_ver.pem
+rm -rf /cache/zte_topsw_duar
+if [ -d /usr/etc_rw/tr069_2 ]; then
+    cp -rf /usr/etc_rw/tr069_2/* /etc_rw/tr069_2
+fi
+if [ -d /usr/etc_rw/tr069 ]; then
+    cd /usr/etc_rw/tr069
+    cp -rf `ls |grep -v tr098db.db|xargs` /etc_rw/tr069
+fi
+cd ${crt_pwd}
+echo "postprocessing complete !"
+
+
+#Set the added and modified parameters
+cfg set dns_redirect_switch="5"
+cfg set web_red_version="EU10.001"
+cfg set ap_station_mode="dial_pref"
+
+#Save the set parameters
+cfg save

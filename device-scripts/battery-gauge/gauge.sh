@@ -9,7 +9,7 @@ STATE=$RUN/state.json
 BAT=/sys/class/power_supply/battery
 BAT_ZTE=/sys/class/power_supply/battery_zte
 CAP_MAH=9800
-R_MOHM=25
+R_MOHM=45
 CHECKPOINT_SEC=60
 
 mkdir -p "$RUN" || exit 1
@@ -79,8 +79,12 @@ if [ "$st" = "Charging" ] || [ "$st" = "Full" ]; then
     if [ "$mv" -ge 4350 ] && [ "$ma" -lt 300 ]; then soc=100.0000; fi
     [ "$st" = "Full" ] && soc=100.0000
 fi
-if [ "$st" = "Discharging" ] && [ "$mv" -le 3450 ]; then
-    soc=1.5000
+if [ "$st" = "Discharging" ]; then
+    # 端电压含内阻压降：6A 重载下压降可达 ~300mV，端电压 3450mV 时真实电量
+    # 可能还有 20%+。直接钳 1.5% 会造成 SOC 断崖（2026-10-25 实测 55%→1.5%）。
+    # 改为 IR 补偿：折算开路电压，仅当 OCV 仍 ≤3400mV（真实空电）才钳制。
+    ocvmv=$((mv - ma * R_MOHM / 1000))
+    [ "$ocvmv" -le 3400 ] && soc=1.5000
 fi
 
 # === 插电时长统计（仅展示，不写任何内核节点） ===
