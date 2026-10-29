@@ -1,0 +1,607 @@
+# MU5120 LCM evidence — 2026-10-29
+# Offline ARM32 disassembly from the boot image identified in fields.json.
+# Selected complete function ranges; trailing whitespace removed.
+# Comments are helper-generated annotations, not original source code.
+# No device write, restart, or flashing was performed for this investigation.
+
+=== zte_battery_thermal_usr_work b091099c size 564 ===
+b091099c: push     {r4, r5, r6, r7, fp, lr}
+b09109a0: sub      sp, sp, #8
+b09109a4: movw     r1, #0xde88
+b09109a8: movt     r1, #0xb161                         ; jiffies_64
+b09109ac: ldr      r6, [r1]
+b09109b0: ldr      r1, [r0, #0x3a0]
+b09109b4: sub      r1, r1, #5
+b09109b8: cmp      r1, #1
+b09109bc: bhi      #0xb0910ab0                         ; zte_battery_thermal_usr_work+0x114
+b09109c0: sub      r5, r0, #0x168
+b09109c4: movw     r0, #0xbde8
+b09109c8: movt     r0, #0xb175                         ; zte_battery_device
+b09109cc: ldr      r0, [r0]
+b09109d0: cmp      r0, #0
+b09109d4: beq      #0xb0910a14                         ; zte_battery_thermal_usr_work+0x78
+b09109d8: ldr      r0, [r0, #0x510]
+b09109dc: bic      r0, r0, #1
+b09109e0: cmp      r0, #2
+b09109e4: bne      #0xb0910a14                         ; zte_battery_thermal_usr_work+0x78
+b09109e8: movw     r0, #0x97f8
+b09109ec: movt     r0, #0xb168                         ; zpd_dbg_level
+b09109f0: ldr      r0, [r0]
+b09109f4: cmp      r0, #7
+b09109f8: blo      #0xb0910ab0                         ; zte_battery_thermal_usr_work+0x114
+b09109fc: ldr      r1, [r5, #0x38]
+b0910a00: movw     r0, #0x94c4
+b0910a04: movw     r2, #0xc2d8
+b0910a08: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b0910a0c: movt     r2, #0xb12c                         ; 'zte-power: %s: thermal user work closed\n'
+b0910a10: b        #0xb0910b70                         ; zte_battery_thermal_usr_work+0x1d4
+b0910a14: ldr      r0, [r5, #0x49c]
+b0910a18: cmp      r0, #1
+b0910a1c: bne      #0xb0910a80                         ; zte_battery_thermal_usr_work+0xe4
+b0910a20: ldr      r1, [r5, #0x4ac]
+b0910a24: movw     r0, #0xbeec
+b0910a28: movt     r0, #0xb175                         ; zte_battery_thermal_usr_work.battery_full_flag
+b0910a2c: cmp      r1, #0x64
+b0910a30: beq      #0xb0910ab8                         ; zte_battery_thermal_usr_work+0x11c
+b0910a34: ldrb     r1, [r0]
+b0910a38: cmp      r1, #0
+b0910a3c: bne      #0xb0910ab8                         ; zte_battery_thermal_usr_work+0x11c
+b0910a40: mov      r1, #0
+b0910a44: strb     r1, [r0]
+b0910a48: movw     r0, #0xbee8
+b0910a4c: movt     r0, #0xb175                         ; zte_battery_thermal_usr_work.period_ts
+b0910a50: str      r1, [r0]
+b0910a54: movw     r0, #0x97f8
+b0910a58: movt     r0, #0xb168                         ; zpd_dbg_level
+b0910a5c: ldr      r0, [r0]
+b0910a60: cmp      r0, #7
+b0910a64: blo      #0xb0910ab0                         ; zte_battery_thermal_usr_work+0x114
+b0910a68: movw     r0, #0x94c4
+b0910a6c: movw     r2, #0xc357
+b0910a70: ldr      r1, [r5, #0x38]
+b0910a74: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b0910a78: movt     r2, #0xb12c                         ; 'zte-power: %s: not in progress\n'
+b0910a7c: b        #0xb0910b70                         ; zte_battery_thermal_usr_work+0x1d4
+b0910a80: movw     r0, #0xbeec
+b0910a84: mov      r1, #0
+b0910a88: movt     r0, #0xb175                         ; zte_battery_thermal_usr_work.battery_full_flag
+b0910a8c: strb     r1, [r0]
+b0910a90: movw     r0, #0xbee8
+b0910a94: movt     r0, #0xb175                         ; zte_battery_thermal_usr_work.period_ts
+b0910a98: str      r1, [r0]
+b0910a9c: movw     r0, #0x97f8
+b0910aa0: movt     r0, #0xb168                         ; zpd_dbg_level
+b0910aa4: ldr      r0, [r0]
+b0910aa8: cmp      r0, #7
+b0910aac: bhs      #0xb0910b5c                         ; zte_battery_thermal_usr_work+0x1c0
+b0910ab0: add      sp, sp, #8
+b0910ab4: pop      {r4, r5, r6, r7, fp, pc}
+b0910ab8: movw     r7, #0xbee8
+b0910abc: mov      r1, #1
+b0910ac0: movt     r7, #0xb175                         ; zte_battery_thermal_usr_work.period_ts
+b0910ac4: strb     r1, [r0]
+b0910ac8: ldr      r0, [r7]
+b0910acc: cmp      r0, #0
+b0910ad0: ldr      r0, [r5, #0x2c0]
+b0910ad4: streq    r6, [r7]
+b0910ad8: bl       #0xb0178728                         ; __msecs_to_jiffies
+b0910adc: mov      r4, r0
+b0910ae0: sub      r1, r6, r0
+b0910ae4: ldr      r0, [r7]
+b0910ae8: subs     r1, r1, r0
+b0910aec: bmi      #0xb0910b1c                         ; zte_battery_thermal_usr_work+0x180
+b0910af0: movw     r0, #0x97f8
+b0910af4: movt     r0, #0xb168                         ; zpd_dbg_level
+b0910af8: ldr      r0, [r0]
+b0910afc: cmp      r0, #6
+b0910b00: bhs      #0xb0910bac                         ; zte_battery_thermal_usr_work+0x210
+b0910b04: mov      r0, #2
+b0910b08: str      r6, [r7]
+b0910b0c: bl       #0xb090bef0                         ; zte_power_set_customer_mode
+b0910b10: ldr      r0, [r5]
+b0910b14: bl       #0xb0906b28                         ; zte_power_supply_changed
+b0910b18: b        #0xb0910b24                         ; zte_battery_thermal_usr_work+0x188
+b0910b1c: sub      r1, r4, r6
+b0910b20: add      r4, r1, r0
+b0910b24: movw     r0, #0x97f8
+b0910b28: movt     r0, #0xb168                         ; zpd_dbg_level
+b0910b2c: ldr      r0, [r0]
+b0910b30: cmp      r0, #7
+b0910b34: bhs      #0xb0910b84                         ; zte_battery_thermal_usr_work+0x1e8
+b0910b38: movw     r0, #0x4280
+b0910b3c: add      r2, r5, #0x168
+b0910b40: movt     r0, #0xb160                         ; system_wq
+b0910b44: mov      r3, r4
+b0910b48: ldr      r1, [r0]
+b0910b4c: mov      r0, #1
+b0910b50: add      sp, sp, #8
+b0910b54: pop      {r4, r5, r6, r7, fp, lr}
+b0910b58: b        #0xb0135754                         ; queue_delayed_work_on
+b0910b5c: movw     r0, #0x94c4
+b0910b60: movw     r2, #0xc377
+b0910b64: ldr      r1, [r5, #0x38]
+b0910b68: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b0910b6c: movt     r2, #0xb12c                         ; 'zte-power: %s: stop\n'
+b0910b70: movw     r3, #0xc301
+b0910b74: movt     r3, #0xb12c                         ; 'zte_battery_thermal_usr_work'
+b0910b78: add      sp, sp, #8
+b0910b7c: pop      {r4, r5, r6, r7, fp, lr}
+b0910b80: b        #0xb05b22b4                         ; dev_printk
+b0910b84: ldr      r1, [r5, #0x38]
+b0910b88: movw     r0, #0x94c4
+b0910b8c: movw     r2, #0xc33d
+b0910b90: movw     r3, #0xc301
+b0910b94: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b0910b98: movt     r2, #0xb12c                         ; 'zte-power: %s: delay %lu\n'
+b0910b9c: movt     r3, #0xb12c                         ; 'zte_battery_thermal_usr_work'
+b0910ba0: str      r4, [sp]
+b0910ba4: bl       #0xb05b22b4                         ; dev_printk
+b0910ba8: b        #0xb0910b38                         ; zte_battery_thermal_usr_work+0x19c
+b0910bac: ldr      r1, [r5, #0x38]
+b0910bb0: movw     r0, #0x94c4
+b0910bb4: movw     r2, #0xc31e
+b0910bb8: movw     r3, #0xc301
+b0910bbc: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b0910bc0: movt     r2, #0xb12c                         ; 'zte-power: %s: period timeout\n'
+b0910bc4: movt     r3, #0xb12c                         ; 'zte_battery_thermal_usr_work'
+b0910bc8: bl       #0xb05b22b4                         ; dev_printk
+b0910bcc: b        #0xb0910b04                         ; zte_battery_thermal_usr_work+0x168
+
+=== zte_battery_store_customer_mode b090d0bc size 448 ===
+b090d0bc: push     {r4, r5, r6, r7, r8, lr}
+b090d0c0: sub      sp, sp, #0x18
+b090d0c4: movw     r8, #0x4248
+b090d0c8: mov      r6, r0
+b090d0cc: movt     r8, #0xb160                         ; __stack_chk_guard
+b090d0d0: mov      r4, r3
+b090d0d4: ldr      r0, [r8]
+b090d0d8: mov      r7, r2
+b090d0dc: str      r0, [sp, #0x14]
+b090d0e0: ldr      r0, [r6, #0x64]
+b090d0e4: bl       #0xb079d4f8                         ; power_supply_get_drvdata
+b090d0e8: mov      r5, r0
+b090d0ec: mov      r0, #0
+b090d0f0: add      r2, sp, #8
+b090d0f4: movw     r1, #0xab59
+b090d0f8: str      r0, [sp, #0x10]
+b090d0fc: orr      r3, r2, #4
+b090d100: str      r0, [sp, #0xc]
+b090d104: movt     r1, #0xb12c                         ; '%d %d %d'
+b090d108: str      r0, [sp, #8]
+b090d10c: add      r0, r2, #8
+b090d110: str      r0, [sp]
+b090d114: mov      r0, r7
+b090d118: bl       #0xb0e17af8                         ; sscanf
+b090d11c: mov      r1, r0
+b090d120: ldr      r0, [sp, #8]
+b090d124: cmp      r1, #1
+b090d128: beq      #0xb090d140                         ; zte_battery_store_customer_mode+0x84
+b090d12c: ldr      r2, [sp, #0xc]
+b090d130: cmp      r1, #2
+b090d134: blt      #0xb090d184                         ; zte_battery_store_customer_mode+0xc8
+b090d138: cmp      r2, #0
+b090d13c: bne      #0xb090d184                         ; zte_battery_store_customer_mode+0xc8
+b090d140: sub      r1, r0, #1
+b090d144: cmp      r1, #2
+b090d148: bhi      #0xb090d154                         ; zte_battery_store_customer_mode+0x98
+b090d14c: bl       #0xb090bef0                         ; zte_power_set_customer_mode
+b090d150: b        #0xb090d244                         ; zte_battery_store_customer_mode+0x188
+b090d154: movw     r0, #0x97f8
+b090d158: movt     r0, #0xb168                         ; zpd_dbg_level
+b090d15c: ldr      r0, [r0]
+b090d160: cmp      r0, #3
+b090d164: blo      #0xb090d244                         ; zte_battery_store_customer_mode+0x188
+b090d168: movw     r0, #0xbf3e
+b090d16c: movw     r2, #0xb6ef
+b090d170: movt     r0, #0xb11f                         ; fs_ftype_by_dtype+0x3240
+b090d174: movt     r2, #0xb12c                         ; 'zte-power: mode not supported\n'
+b090d178: mov      r1, r6
+b090d17c: bl       #0xb05b22b4                         ; dev_printk
+b090d180: b        #0xb090d244                         ; zte_battery_store_customer_mode+0x188
+b090d184: cmp      r0, #2
+b090d188: beq      #0xb090d1b0                         ; zte_battery_store_customer_mode+0xf4
+b090d18c: cmp      r0, #1
+b090d190: bne      #0xb090d1e8                         ; zte_battery_store_customer_mode+0x12c
+b090d194: ldr      r0, [r5, #0x514]
+b090d198: cmp      r0, #0
+b090d19c: beq      #0xb090d244                         ; zte_battery_store_customer_mode+0x188
+b090d1a0: mov      r0, r5
+b090d1a4: mov      r1, #6
+b090d1a8: bl       #0xb090bdf8                         ; zte_battery_thermal_algorithm_init
+b090d1ac: b        #0xb090d1fc                         ; zte_battery_store_customer_mode+0x140
+b090d1b0: cmp      r2, #1
+b090d1b4: blt      #0xb090d1fc                         ; zte_battery_store_customer_mode+0x140
+b090d1b8: add      r0, r5, #0x398
+b090d1bc: mov      r6, #1
+b090d1c0: mov      r1, #0
+b090d1c4: mov      r2, #0x88
+b090d1c8: str      r6, [r5, #0x514]
+b090d1cc: bl       #0xb0e066c0                         ; mmioset
+b090d1d0: ldr      r1, [sp, #0xc]
+b090d1d4: movw     r0, #0xea60
+b090d1d8: str      r6, [r5, #0x510]
+b090d1dc: mul      r0, r1, r0
+b090d1e0: str      r0, [r5, #0x2c0]
+b090d1e4: b        #0xb090d1fc                         ; zte_battery_store_customer_mode+0x140
+b090d1e8: movw     r0, #0x97f8
+b090d1ec: movt     r0, #0xb168                         ; zpd_dbg_level
+b090d1f0: ldr      r0, [r0]
+b090d1f4: cmp      r0, #3
+b090d1f8: bhs      #0xb090d260                         ; zte_battery_store_customer_mode+0x1a4
+b090d1fc: add      r6, r5, #0x108
+b090d200: mov      r0, r6
+b090d204: bl       #0xb0136bf8                         ; cancel_delayed_work
+b090d208: add      r5, r5, #0x228
+b090d20c: mov      r0, r5
+b090d210: bl       #0xb0136bf8                         ; cancel_delayed_work
+b090d214: movw     r7, #0x4280
+b090d218: mov      r0, #1
+b090d21c: movt     r7, #0xb160                         ; system_wq
+b090d220: mov      r2, r6
+b090d224: ldr      r1, [r7]
+b090d228: mov      r3, #0xa
+b090d22c: bl       #0xb0135754                         ; queue_delayed_work_on
+b090d230: ldr      r1, [r7]
+b090d234: mov      r0, #1
+b090d238: mov      r2, r5
+b090d23c: mov      r3, #0x258
+b090d240: bl       #0xb0135754                         ; queue_delayed_work_on
+b090d244: ldr      r0, [r8]
+b090d248: ldr      r1, [sp, #0x14]
+b090d24c: subs     r0, r0, r1
+b090d250: moveq    r0, r4
+b090d254: addeq    sp, sp, #0x18
+b090d258: popeq    {r4, r5, r6, r7, r8, pc}
+b090d25c: bl       #0xb011d124                         ; __stack_chk_fail
+b090d260: movw     r0, #0xbf3e
+b090d264: movw     r2, #0xb6ef
+b090d268: movt     r0, #0xb11f                         ; fs_ftype_by_dtype+0x3240
+b090d26c: movt     r2, #0xb12c                         ; 'zte-power: mode not supported\n'
+b090d270: mov      r1, r6
+b090d274: bl       #0xb05b22b4                         ; dev_printk
+b090d278: b        #0xb090d1fc                         ; zte_battery_store_customer_mode+0x140
+
+=== zte_power_set_customer_mode b090bef0 size 216 ===
+b090bef0: push     {r4, r5, r6, lr}
+b090bef4: sub      sp, sp, #8
+b090bef8: mov      r5, r0
+b090befc: movw     r0, #0xbde8
+b090bf00: movt     r0, #0xb175                         ; zte_battery_device
+b090bf04: ldr      r6, [r0]
+b090bf08: cmp      r6, #0
+b090bf0c: beq      #0xb090bf48                         ; zte_power_set_customer_mode+0x58
+b090bf10: ldr      r0, [r6, #0x510]
+b090bf14: mov      r4, #0
+b090bf18: cmp      r0, r5
+b090bf1c: beq      #0xb090bf64                         ; zte_power_set_customer_mode+0x74
+b090bf20: movw     r1, #0x97f8
+b090bf24: movt     r1, #0xb168                         ; zpd_dbg_level
+b090bf28: ldr      r1, [r1]
+b090bf2c: bge      #0xb090bf50                         ; zte_power_set_customer_mode+0x60
+b090bf30: cmp      r1, #6
+b090bf34: bhs      #0xb090bf70                         ; zte_power_set_customer_mode+0x80
+b090bf38: mov      r0, r6
+b090bf3c: bl       #0xb090bfc8                         ; zte_battery_reset_thermal_status
+b090bf40: str      r5, [r6, #0x510]
+b090bf44: b        #0xb090bf5c                         ; zte_power_set_customer_mode+0x6c
+b090bf48: mvn      r4, #0
+b090bf4c: b        #0xb090bf64                         ; zte_power_set_customer_mode+0x74
+b090bf50: cmp      r1, #6
+b090bf54: bhs      #0xb090bf98                         ; zte_power_set_customer_mode+0xa8
+b090bf58: mov      r5, r0
+b090bf5c: mov      r0, r5
+b090bf60: bl       #0xb0907360                         ; zte_power_update_battery_customer_mode
+b090bf64: mov      r0, r4
+b090bf68: add      sp, sp, #8
+b090bf6c: pop      {r4, r5, r6, pc}
+b090bf70: ldr      r1, [r6, #0x38]
+b090bf74: movw     r0, #0x94c4
+b090bf78: movw     r2, #0xa8c5
+b090bf7c: movw     r3, #0xa8e0
+b090bf80: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b090bf84: movt     r2, #0xb12c                         ; 'zte-power: %s: mode is %d\n'
+b090bf88: movt     r3, #0xb12c                         ; 'zte_power_set_customer_mode'
+b090bf8c: str      r5, [sp]
+b090bf90: bl       #0xb05b22b4                         ; dev_printk
+b090bf94: b        #0xb090bf38                         ; zte_power_set_customer_mode+0x48
+b090bf98: ldr      r1, [r6, #0x38]
+b090bf9c: movw     r2, #0xa8fc
+b090bfa0: movw     r3, #0xa8e0
+b090bfa4: str      r0, [sp, #4]
+b090bfa8: movw     r0, #0x94c4
+b090bfac: movt     r2, #0xb12c                         ; 'zte-power: %s: mode is %d, lower priority than cur mode %d\n'
+b090bfb0: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b090bfb4: movt     r3, #0xb12c                         ; 'zte_power_set_customer_mode'
+b090bfb8: str      r5, [sp]
+b090bfbc: bl       #0xb05b22b4                         ; dev_printk
+b090bfc0: ldr      r5, [r6, #0x510]
+b090bfc4: b        #0xb090bf5c                         ; zte_power_set_customer_mode+0x6c
+
+=== zte_battery_thermal_algorithm_init b090bdf8 size 196 ===
+b090bdf8: push     {r4, r5, r6, r7, fp, lr}
+b090bdfc: sub      sp, sp, #8
+b090be00: mov      r4, r0
+b090be04: movw     r0, #0x97f8
+b090be08: movt     r0, #0xb168                         ; zpd_dbg_level
+b090be0c: mov      r5, r1
+b090be10: ldr      r0, [r0]
+b090be14: cmp      r0, #6
+b090be18: bhs      #0xb090be90                         ; zte_battery_thermal_algorithm_init+0x98
+b090be1c: sub      r0, r5, #3
+b090be20: cmp      r0, #4
+b090be24: blo      #0xb090be34                         ; zte_battery_thermal_algorithm_init+0x3c
+b090be28: mvn      r6, #0
+b090be2c: cmp      r5, #0
+b090be30: bne      #0xb090be84                         ; zte_battery_thermal_algorithm_init+0x8c
+b090be34: add      r0, r4, #0x398
+b090be38: mov      r7, #1
+b090be3c: mov      r6, #0
+b090be40: mov      r1, #0
+b090be44: mov      r2, #0x88
+b090be48: strb     r7, [r4, #0x51c]
+b090be4c: str      r6, [r4, #0x514]
+b090be50: str      r5, [r4, #0x508]
+b090be54: bl       #0xb0e066c0                         ; mmioset
+b090be58: mov      r0, #0x5a0
+b090be5c: movw     r1, #0xe800
+b090be60: str      r0, [r4, #0x2c4]
+b090be64: mov      r0, #0x64
+b090be68: movt     r1, #0x36e
+b090be6c: str      r0, [r4, #0x4b0]
+b090be70: mov      r0, #3
+b090be74: str      r6, [r4, #0x518]
+b090be78: str      r1, [r4, #0x2c0]
+b090be7c: str      r7, [r4, #0x510]
+b090be80: str      r0, [r4, #0x3a0]
+b090be84: mov      r0, r6
+b090be88: add      sp, sp, #8
+b090be8c: pop      {r4, r5, r6, r7, fp, pc}
+b090be90: ldr      r1, [r4, #0x38]
+b090be94: movw     r2, #0x8e35
+b090be98: ldr      r0, [r4, #0x508]
+b090be9c: movw     r3, #0xa8a2
+b090bea0: str      r0, [sp]
+b090bea4: movw     r0, #0x94c4
+b090bea8: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b090beac: movt     r2, #0xb12c                         ; 'zte-power: %s: %d\n'
+b090beb0: movt     r3, #0xb12c                         ; 'zte_battery_thermal_algorithm_init'
+b090beb4: bl       #0xb05b22b4                         ; dev_printk
+b090beb8: b        #0xb090be1c                         ; zte_battery_thermal_algorithm_init+0x24
+
+=== battery_info_get_thermal_status b0912b78 size 132 ===
+b0912b78: push     {r4, lr}
+b0912b7c: mov      r4, r1
+b0912b80: bl       #0xb090baf0                         ; zte_power_get_customer_mode
+b0912b84: mov      r1, r0
+b0912b88: sub      r0, r0, #2
+b0912b8c: cmp      r0, #2
+b0912b90: bhs      #0xb0912bc0                         ; battery_info_get_thermal_status+0x48
+b0912b94: movw     r2, #0xa838
+b0912b98: mov      r1, #0
+b0912b9c: movt     r2, #0xb168                         ; lcm_thermal_status
+b0912ba0: add      r0, r2, r1
+b0912ba4: ldrh     r3, [r0]
+b0912ba8: cmp      r3, r4
+b0912bac: beq      #0xb0912bf8                         ; battery_info_get_thermal_status+0x80
+b0912bb0: add      r1, r1, #0xc
+b0912bb4: cmp      r1, #0xa8
+b0912bb8: bne      #0xb0912ba0                         ; battery_info_get_thermal_status+0x28
+b0912bbc: b        #0xb0912bf4                         ; battery_info_get_thermal_status+0x7c
+b0912bc0: mov      r0, #0
+b0912bc4: cmp      r1, #1
+b0912bc8: popne    {r4, pc}
+b0912bcc: movw     r2, #0xa778
+b0912bd0: mov      r1, #0
+b0912bd4: movt     r2, #0xb168                         ; thermal_status
+b0912bd8: add      r0, r2, r1
+b0912bdc: ldrh     r3, [r0]
+b0912be0: cmp      r3, r4
+b0912be4: beq      #0xb0912bf8                         ; battery_info_get_thermal_status+0x80
+b0912be8: add      r1, r1, #0xc
+b0912bec: cmp      r1, #0xc0
+b0912bf0: bne      #0xb0912bd8                         ; battery_info_get_thermal_status+0x60
+b0912bf4: mov      r0, #0
+b0912bf8: pop      {r4, pc}
+
+=== smblib_set_usb_suspend b07a87a8 size 344 ===
+b07a87a8: push     {r4, r5, r6, r7, r8, lr}
+b07a87ac: sub      sp, sp, #0x10
+b07a87b0: mov      r6, r1
+b07a87b4: mov      r4, r0
+b07a87b8: mov      r0, #1
+b07a87bc: mov      r1, #0x6b
+b07a87c0: bl       #0xb0905a44                         ; zte_power_get_psy_property
+b07a87c4: mov      r7, r0
+b07a87c8: bl       #0xb090baf0                         ; zte_power_get_customer_mode
+b07a87cc: cmp      r7, #0xa
+b07a87d0: cmple    r0, #2
+b07a87d4: blt      #0xb07a884c                         ; smblib_set_usb_suspend+0xa4
+b07a87d8: movw     r6, #0x97f8
+b07a87dc: mov      r5, #0
+b07a87e0: movt     r6, #0xb168                         ; zpd_dbg_level
+b07a87e4: ldr      r0, [r6]
+b07a87e8: cmp      r0, #7
+b07a87ec: blo      #0xb07a88bc                         ; smblib_set_usb_suspend+0x114
+b07a87f0: ldr      r8, [r4]
+b07a87f4: bl       #0xb090baf0                         ; zte_power_get_customer_mode
+b07a87f8: movw     r2, #0xc6f9
+b07a87fc: movw     r3, #0xc72c
+b07a8800: stm      sp, {r0, r7}
+b07a8804: movw     r0, #0x94c4
+b07a8808: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b07a880c: movt     r2, #0xb128                         ; 'zte-power: %s ZTE customer_mode %d, thermal_id %d\n'
+b07a8810: movt     r3, #0xb128                         ; 'smblib_set_usb_suspend'
+b07a8814: mov      r1, r8
+b07a8818: bl       #0xb05b22b4                         ; dev_printk
+b07a881c: ldr      r0, [r6]
+b07a8820: cmp      r0, #7
+b07a8824: blo      #0xb07a88bc                         ; smblib_set_usb_suspend+0x114
+b07a8828: ldr      r1, [r4]
+b07a882c: movw     r0, #0x94c4
+b07a8830: movw     r2, #0xc743
+b07a8834: movw     r3, #0xc72c
+b07a8838: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b07a883c: movt     r2, #0xb128                         ; 'zte-power: %s ZTE do nothing and return\n'
+b07a8840: movt     r3, #0xb128                         ; 'smblib_set_usb_suspend'
+b07a8844: bl       #0xb05b22b4                         ; dev_printk
+b07a8848: b        #0xb07a88bc                         ; smblib_set_usb_suspend+0x114
+b07a884c: cmp      r6, #0
+b07a8850: beq      #0xb07a886c                         ; smblib_set_usb_suspend+0xc4
+b07a8854: ldr      r0, [r4, #0x2d4]
+b07a8858: movw     r1, #0xc76c
+b07a885c: movt     r1, #0xb128                         ; 'USB_SUSPEND_VOTER'
+b07a8860: mov      r2, #1
+b07a8864: mov      r3, #0
+b07a8868: bl       #0xb07b5348                         ; vote
+b07a886c: ldr      r0, [r4, #8]
+b07a8870: mov      r1, #0
+b07a8874: str      r1, [sp]
+b07a8878: mov      r2, #1
+b07a887c: str      r1, [sp, #4]
+b07a8880: mov      r3, r6
+b07a8884: str      r1, [sp, #8]
+b07a8888: mov      r1, #0x1340
+b07a888c: bl       #0xb05d337c                         ; regmap_update_bits_base
+b07a8890: mov      r5, r0
+b07a8894: cmn      r0, #1
+b07a8898: ble      #0xb07a88c8                         ; smblib_set_usb_suspend+0x120
+b07a889c: cmp      r6, #0
+b07a88a0: bne      #0xb07a88bc                         ; smblib_set_usb_suspend+0x114
+b07a88a4: ldr      r0, [r4, #0x2d4]
+b07a88a8: movw     r1, #0xc76c
+b07a88ac: movt     r1, #0xb128                         ; 'USB_SUSPEND_VOTER'
+b07a88b0: mov      r2, #0
+b07a88b4: mov      r3, #0
+b07a88b8: bl       #0xb07b5348                         ; vote
+b07a88bc: mov      r0, r5
+b07a88c0: add      sp, sp, #0x10
+b07a88c4: pop      {r4, r5, r6, r7, r8, pc}
+b07a88c8: movw     r0, #0x46d0
+b07a88cc: movw     r3, #0x2969
+b07a88d0: ldr      r1, [r4, #4]
+b07a88d4: movt     r0, #0xb131                         ; 'suspend'
+b07a88d8: movt     r3, #0xb127                         ; 'resume'
+b07a88dc: cmp      r6, #0
+b07a88e0: movw     r2, #0xc72c
+b07a88e4: movne    r3, r0
+b07a88e8: movw     r0, #0xc77e
+b07a88ec: movt     r2, #0xb128                         ; 'smblib_set_usb_suspend'
+b07a88f0: movt     r0, #0xb128                         ; i2c_msm_dmaengine_dir+0x7fb6
+b07a88f4: str      r5, [sp]
+b07a88f8: bl       #0xb015c530                         ; printk
+b07a88fc: b        #0xb07a889c                         ; smblib_set_usb_suspend+0xf4
+
+=== smblib_chg_disable_vote_callback b07b4b6c size 288 ===
+b07b4b6c: push     {r4, r5, r6, r7, r8, lr}
+b07b4b70: sub      sp, sp, #0x10
+b07b4b74: mov      r4, r1
+b07b4b78: mov      r0, #1
+b07b4b7c: mov      r1, #0x6b
+b07b4b80: mov      r6, r2
+b07b4b84: bl       #0xb0905a44                         ; zte_power_get_psy_property
+b07b4b88: mov      r7, r0
+b07b4b8c: bl       #0xb090baf0                         ; zte_power_get_customer_mode
+b07b4b90: cmp      r7, #0xa
+b07b4b94: cmple    r0, #2
+b07b4b98: blt      #0xb07b4c10                         ; smblib_chg_disable_vote_callback+0xa4
+b07b4b9c: movw     r6, #0x97f8
+b07b4ba0: mov      r5, #0
+b07b4ba4: movt     r6, #0xb168                         ; zpd_dbg_level
+b07b4ba8: ldr      r0, [r6]
+b07b4bac: cmp      r0, #7
+b07b4bb0: blo      #0xb07b4c40                         ; smblib_chg_disable_vote_callback+0xd4
+b07b4bb4: ldr      r8, [r4]
+b07b4bb8: bl       #0xb090baf0                         ; zte_power_get_customer_mode
+b07b4bbc: movw     r2, #0xc6f9
+b07b4bc0: movw     r3, #0xedd3
+b07b4bc4: stm      sp, {r0, r7}
+b07b4bc8: movw     r0, #0x94c4
+b07b4bcc: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b07b4bd0: movt     r2, #0xb128                         ; 'zte-power: %s ZTE customer_mode %d, thermal_id %d\n'
+b07b4bd4: movt     r3, #0xb128                         ; 'smblib_chg_disable_vote_callback'
+b07b4bd8: mov      r1, r8
+b07b4bdc: bl       #0xb05b22b4                         ; dev_printk
+b07b4be0: ldr      r0, [r6]
+b07b4be4: cmp      r0, #7
+b07b4be8: blo      #0xb07b4c40                         ; smblib_chg_disable_vote_callback+0xd4
+b07b4bec: ldr      r1, [r4]
+b07b4bf0: movw     r0, #0x94c4
+b07b4bf4: movw     r2, #0xc743
+b07b4bf8: movw     r3, #0xedd3
+b07b4bfc: movt     r0, #0xb11e                         ; thumb2arm.subset.20+0x2408
+b07b4c00: movt     r2, #0xb128                         ; 'zte-power: %s ZTE do nothing and return\n'
+b07b4c04: movt     r3, #0xb128                         ; 'smblib_chg_disable_vote_callback'
+b07b4c08: bl       #0xb05b22b4                         ; dev_printk
+b07b4c0c: b        #0xb07b4c40                         ; smblib_chg_disable_vote_callback+0xd4
+b07b4c10: clz      r1, r6
+b07b4c14: ldr      r0, [r4, #8]
+b07b4c18: mov      r5, #0
+b07b4c1c: mov      r2, #1
+b07b4c20: lsr      r3, r1, #5
+b07b4c24: movw     r1, #0x1042
+b07b4c28: str      r5, [sp]
+b07b4c2c: str      r5, [sp, #4]
+b07b4c30: str      r5, [sp, #8]
+b07b4c34: bl       #0xb05d337c                         ; regmap_update_bits_base
+b07b4c38: cmn      r0, #1
+b07b4c3c: ble      #0xb07b4c4c                         ; smblib_chg_disable_vote_callback+0xe0
+b07b4c40: mov      r0, r5
+b07b4c44: add      sp, sp, #0x10
+b07b4c48: pop      {r4, r5, r6, r7, r8, pc}
+b07b4c4c: movw     r3, #0xaaed
+b07b4c50: ldr      r1, [r4, #4]
+b07b4c54: mov      r7, r0
+b07b4c58: str      r0, [sp]
+b07b4c5c: movw     r0, #0x8683
+b07b4c60: movt     r3, #0xb122                         ; 'enable'
+b07b4c64: movt     r0, #0xb128                         ; 'disable'
+b07b4c68: cmp      r6, #0
+b07b4c6c: movw     r2, #0xedd3
+b07b4c70: movne    r3, r0
+b07b4c74: movw     r0, #0xedf4
+b07b4c78: movt     r2, #0xb128                         ; 'smblib_chg_disable_vote_callback'
+b07b4c7c: movt     r0, #0xb128                         ; i2c_msm_dmaengine_dir+0xa62c
+b07b4c80: bl       #0xb015c530                         ; printk
+b07b4c84: mov      r5, r7
+b07b4c88: b        #0xb07b4c40                         ; smblib_chg_disable_vote_callback+0xd4
+
+=== FINAL READ-ONLY SNAPSHOT (boot identifier omitted) ===
+===boot_id===
+[omitted; unchanged from the initial snapshot]
+===uptime===
+34319.56 22298.44
+===mode===
+
+===========current state============
+
+customer mode is 1
+
+*****customer mode define info*****
+0: CUSTOMER_UNKNOWN_MODE
+1: CUSTOMER_DEFAULT_MODE
+2: CUSTOMER_SINGLE_LONG_CHARGING_MODE
+
+=====customer mode details parameter=====
+2: CUSTOMER_SINGLE_LONG_CHARGING_MODE parameter
+single_lcm_period is 960 minutes
+
+=====customer_mode_dbg details=====
+customer_mode_dbg is 0
+
+===record===
+lcm_usr_disabled
+
+***NOTICE: record unit is minute***
+cur_runtime = 0
+cur_charger_time = 0
+max_record_num = 3
+record = 0,0,0,0,0,0,0,0,0,0,
+         0,0,0,0,0,0,0,0,0,0,
+         0,0,0,0,0,0,0,0,0,0,
+next_record_num = 0
+===capacity===
+100
+===usb===
+1
+===boot_sha256===
+1ca2deef24e0c974e8cfe0011da5407ce4d79363fc56de6783553c3750c0edad  /dev/mtd19

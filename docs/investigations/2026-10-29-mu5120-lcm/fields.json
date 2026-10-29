@@ -1,0 +1,28 @@
+{
+  "image": {
+    "sha256": "1ca2deef24e0c974e8cfe0011da5407ce4d79363fc56de6783553c3750c0edad",
+    "kernelBase": "0xb0008000"
+  },
+  "capacity": {
+    "propertyId": 99,
+    "propertyTableEntry": "0xb1672a38",
+    "propertyName": "REAL_CAPACITY_MBB",
+    "getPropertyBranch": "0xb0911bf4",
+    "structOffset": "0x4ac"
+  },
+  "timer": {
+    "work": "0xb091099c",
+    "durationField": "0x2c0",
+    "defaultMilliseconds": 57600000,
+    "defaultMinutes": 960,
+    "periodTimestamp": "0xb175bee8",
+    "batteryFullFlag": "0xb175beec"
+  },
+  "scope": {
+    "investigationDate": "2026-10-29",
+    "method": "read-only device snapshot and offline disassembly",
+    "deviceWritesPerformed": false,
+    "shortPeriodBehaviorTested": false,
+    "physicalBypassVerified": false
+  }
+}

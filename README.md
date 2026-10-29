@@ -172,6 +172,10 @@ app/src/main/kotlin/com/xingyue/ufitools/monitor/
     └── theme/             # Miuix 主题、莫奈取色、种子色
 ```
 
+## 设备驱动调查
+
+- [MU5120：960 分钟长充模式调查（2026-10-29）](docs/investigations/2026-10-29-mu5120-lcm/README.md)：满电后计时、原生周期配置入口与“长充模式不等于立即直供电”的证据及边界；仅调查，未修改设备参数。
+
 ## 相关项目
 
 - UI 框架：[Miuix](https://github.com/compose-miuix-ui/miuix)
